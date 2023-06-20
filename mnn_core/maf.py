@@ -4,7 +4,7 @@
 
 
 import numpy as np
-from fast_dawson import *
+from mnn_core.fast_dawson import *
 import time
 
 
@@ -36,7 +36,7 @@ class MomentActivation():
         
         # Region 0 is approx zero for sufficiently large cut_off
         # Region 1 is calculate normally 
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))
         
         meanT = 2/self.L*(self.ds1.int_fast(ub) - self.ds1.int_fast(lb))
@@ -68,7 +68,7 @@ class MomentActivation():
         
         # Region 0 is approx zero for sufficiently large cut_off
         # Region 1 is calculate normally 
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))        
         
         #cached mean used
@@ -96,7 +96,7 @@ class MomentActivation():
         
         # Region 0 is approx zero for sufficiently large cut_off
         # Region 1 is calculate normally 
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))
         
         delta_g = self.ds1.dawson1(ub) - self.ds1.dawson1(lb)        
@@ -126,7 +126,7 @@ class MomentActivation():
         
         # Region 0 is approx zero for sufficiently large cut_off
         # Region 1 is calculate normally 
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))
         
         delta_g = self.ds1.dawson1(ub) - self.ds1.dawson1(lb)        
@@ -160,7 +160,7 @@ class MomentActivation():
         indx1 = (self.Vth*self.L - ubar) < (cut_off*np.sqrt(self.L)*sbar)
         indx2 = indx0 & indx1
         
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))
         
         grad_su = np.zeros(ubar.shape)
@@ -188,7 +188,7 @@ class MomentActivation():
         
         indx4 = np.logical_and(~indx0, ubar > 1)
         
-        grad_ss[indx4] = 1/np.sqrt(2*self.L)*np.power(self.u[indx4],1.5)*np.sqrt(1/(1-ubar[indx4])/(1-ubar[indx4]) - 1/ubar[indx4]/ubar[indx4])
+        grad_ss[indx4] = 1/np.sqrt(2*self.L)*np.power(self.u[indx4],1.5)*np.sqrt(1/(self.Vth*self.L-ubar[indx4])/(self.Vth*self.L-ubar[indx4]) - 1/ubar[indx4]/ubar[indx4])
         
         self.grad_ss = grad_ss
         
@@ -203,7 +203,7 @@ class MomentActivation():
         indx1 = (self.Vth*self.L - ubar) < (cut_off*np.sqrt(self.L)*sbar)
         indx2 = indx0 & indx1
         
-        ub = (1-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
+        ub = (self.Vth*self.L-ubar[indx2])/(sbar[indx2]*np.sqrt(self.L))
         lb = -ubar[indx2]/(sbar[indx2]*np.sqrt(self.L))
         
         grad_chu = np.zeros(ubar.shape)
