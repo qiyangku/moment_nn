@@ -8,7 +8,7 @@ Created on Thu Nov  5 13:45:19 2020
 import matplotlib.pyplot as plt
 from mnn_core.maf import MomentActivation
 import numpy as np
-import cupyx as cp
+#import cupyx as cp
 import time
 
 
