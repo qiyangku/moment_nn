@@ -34,7 +34,7 @@ def gen_config(N=1000, T_mnn=10, ie_ratio=4.0, uext=1.0): #generate config file
     'uext': uext, # external firing rate kHz; rate*in-degree*weight = 0.01*1000*0.1 = 1 kHz
     #'wie':{'mean': 5.9, 'std': 0.0},    
     #'wii':{'mean': -9.4, 'std': 0.0},        
-    'conn_prob': 0.2, #connection probability; N.B. high prob leads to poor match between mnn and snn
+    'conn_prob': 0.1, #connection probability; N.B. high prob leads to poor match between mnn and snn
     'sparse_weight': True, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed':None,
     'dT': 200, #ms spike count time window
