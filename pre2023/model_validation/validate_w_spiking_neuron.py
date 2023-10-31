@@ -69,14 +69,17 @@ class InteNFire():
         
     
     def input_spike_sparse(self, spk_mean, spk_var):
-        
-        scale = spk_var/spk_mean/spk_mean
-        shape = spk_mean/spk_var
-        
         num_spikes = int(self.T*spk_mean)*5
         num_samples = num_spikes*self.num_neurons
         
-        isi = np.random.gamma(shape, scale, num_samples)
+        if spk_var>0:
+            scale = spk_var/spk_mean/spk_mean
+            shape = spk_mean/spk_var
+            isi = np.random.gamma(shape, scale, num_samples)
+        else:
+            isi = np.ones(num_samples)/spk_mean
+            ''' if spk_var=0, then just make isi = constant = 1/spk_mean'''
+        
         isi = isi.reshape((self.num_neurons, num_spikes ))        
         
         spk_time = np.cumsum(isi, axis=1)
@@ -89,8 +92,15 @@ class InteNFire():
         neuron_index = np.tile( np.arange(self.num_neurons) , (num_spikes,1)).T.flatten()        
         dat = np.ones(num_samples)
         
+        #try:
         spk_mat = sp.sparse.coo_matrix( (dat, (neuron_index, spk_time)), shape = (self.num_neurons, int(np.max(spk_time))+1 ) ).tocsc() #compressed column format
-        
+        # except:
+        #     print('scale', scale)
+        #     print('shape', shape) #spike var = 0 is problematic
+        #     print('num_samples', num_samples)
+        #     #print('neuron_index', neuron_index)
+        #     print('spk_time', spk_time)
+        #     #print('np.max(spk_time)',np.max(spk_time))
         
         spk_mat = spk_mat[:,:int(self.T/self.dt)]
         
@@ -308,7 +318,7 @@ def batch_analysis_corr2():
     return rho_in, rho_out, rho_maf, u, s         
     
 def input_output_anlaysis(input_type):
-    inf = InteNFire(num_neurons = 100) #time unit: ms        
+    inf = InteNFire(num_neurons = 500) #time unit: ms        
     #N = 31
     #u = np.linspace(-0.5,2.5,N)
     
@@ -318,10 +328,11 @@ def input_output_anlaysis(input_type):
     
     #s = np.array([0,5])#np.ones(N)*1.5
     
-    N = 11
-    u = np.array([2, 5])
-    s = np.linspace(0,10,N)
-    T = 10e3 # Set to None to use adaptive duration
+    #try 25 iterations
+    N = 5
+    u = np.linspace(-1,3,N)
+    s = np.linspace(0,5,N)
+    T = 1e3 # Set to None to use adaptive duration
     
     emp_u = np.zeros((u.size,s.size))
     emp_s = np.zeros((u.size,s.size))
@@ -332,10 +343,10 @@ def input_output_anlaysis(input_type):
             SpkTime, _, _ = inf.run(T = T, input_mean = u[i], input_std = s[j], input_type = input_type, show_message = False)
             emp_u[i,j], emp_s[i,j] = inf.empirical_maf(SpkTime)    
                     
-        progress = (i+1)/N*100
-        elapsed_time = (time.time()-start_time)/60
-        print('Progress: {:.2f}%; Time elapsed: {:.2f} min'.format(progress, elapsed_time ))
-        
+            progress = (i*N + j +1)/N/N*100
+            elapsed_time = (time.time()-start_time)/60
+            print('Progress: {:.2f}%; Time elapsed: {:.2f} min'.format(progress, elapsed_time ))
+            
     
     #maf = MomentActivation()
     
