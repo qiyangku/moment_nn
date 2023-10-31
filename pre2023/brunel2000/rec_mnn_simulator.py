@@ -13,6 +13,23 @@ import time
 
 
 #np.random.seed(1)
+class InputGenerator():
+    def __init__(self, config):
+        self.NE = config['NE']
+        self.NI = config['NI']
+        self.N = config['NE']+config['NI']
+        self.uext = config['uext']
+        we = config['wee']['mean']
+        #define external input mean
+        #
+        self.input_mean = we*self.uext*np.ones((self.N,1)) #input current mean
+        
+        #calculate external input cov (assume independent Poisson spikes)
+        self.input_cov = we*we*self.uext*np.eye(self.N) 
+        
+        #self.L_ext = np.linalg.cholesky(self.input_cov)        
+        
+        return
 
 class RecurrentMNN():
     def __init__(self, config, W, input_gen):
@@ -99,7 +116,7 @@ class RecurrentMNN():
         
         
         for i in range(self.nsteps):
-            print('Starting iteration {}/{}'.format(i,self.nsteps))
+            #print('Starting iteration {}/{}'.format(i,self.nsteps))
             #print('i={}, s.shape = {}'.format(i,s.shape)  )
             if record_ts:
                 U[:,i] = u.ravel()
@@ -122,27 +139,7 @@ class RecurrentMNN():
         else:
             return u, s, rho
     
-    def para_sweep(self):
-        '''Do a parameter sweep over the weight space'''
-        WE = np.linspace(0.0 , 10.0 ,11)
-        ie_ratio = np.linspace(0.0 , 1.0 ,10)
-        
-        U = np.zeros( (len(WE), len(ie_ratio), self.N) )
-        S = np.zeros( (len(WE), len(ie_ratio), self.N) )
-        R = np.zeros( (len(WE), len(ie_ratio), self.N, self.N) )
-        
-        T = 10
-        t0 = time.perf_counter()
-        for i in range(len(WE)):
-            for j in range(len(ie_ratio)):
-                self.W, self.w = self.mexi_mat(h = WE[i], ie_ratio = ie_ratio[j])     
-                u,s,r = self.run(T)
-                U[i,j,:] = u[:,-1]
-                S[i,j,:] = s[:,-1]
-                R[i,j,:,:] = r[:,:,-1]
-            print('WE={}, ie_ratio={}'.format(WE[i],ie_ratio[j]))
-            print('Time Elapsed: ',time.perf_counter() -t0 )
-        return WE, ie_ratio, U, S, R
+
         
 
     # def plot_grid(self, dat):
