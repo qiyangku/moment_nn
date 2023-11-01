@@ -69,7 +69,16 @@ class InteNFire():
         
     
     def input_spike_sparse(self, spk_mean, spk_var):
-        num_spikes = int(self.T*spk_mean)*5
+        num_spikes = int(self.T*spk_mean*5)
+        
+        if num_spikes==0: #if input is so low that no spikes are expected
+            #generate empty sparse matrix
+            spk_mat =  sp.sparse.csr_matrix(  (self.num_neurons, int(self.T/self.dt) )   , dtype=np.float64)
+            return spk_mat
+        else:
+            pass
+        
+        
         num_samples = num_spikes*self.num_neurons
         
         if spk_var>0:
@@ -84,16 +93,21 @@ class InteNFire():
         
         spk_time = np.cumsum(isi, axis=1)
         
+        #try:
         #need to do a safety check to make sure that spk_time[:,-1] > self.T for all neurons
         if np.sum(spk_time[:,-1] < self.T):
             print('Warning: not enough spikes!')
-        
+        #except:
+        #    print(spk_time)
+            
         spk_time = np.floor( spk_time/self.dt).flatten()
         neuron_index = np.tile( np.arange(self.num_neurons) , (num_spikes,1)).T.flatten()        
         dat = np.ones(num_samples)
         
         #try:
         spk_mat = sp.sparse.coo_matrix( (dat, (neuron_index, spk_time)), shape = (self.num_neurons, int(np.max(spk_time))+1 ) ).tocsc() #compressed column format
+        # .tocsr() by default sum up duplicate indices - this is good, no spike will be lost.
+        
         # except:
         #     print('scale', scale)
         #     print('shape', shape) #spike var = 0 is problematic
@@ -317,47 +331,7 @@ def batch_analysis_corr2():
     np.save('validate_corr_5',{'rho_in':rho_in,'rho_out':rho_out,'rho_maf':rho_maf,'u':u,'s':s})
     return rho_in, rho_out, rho_maf, u, s         
     
-def input_output_anlaysis(input_type):
-    inf = InteNFire(num_neurons = 500) #time unit: ms        
-    #N = 31
-    #u = np.linspace(-0.5,2.5,N)
-    
-    #u = np.linspace(-2.5,5.0,N)
-    #u = np.arange(1.25,9.25,0.25)
-    #N = len(u)
-    
-    #s = np.array([0,5])#np.ones(N)*1.5
-    
-    #try 25 iterations
-    N = 5
-    u = np.linspace(-1,3,N)
-    s = np.linspace(0,5,N)
-    T = 1e3 # Set to None to use adaptive duration
-    
-    emp_u = np.zeros((u.size,s.size))
-    emp_s = np.zeros((u.size,s.size))
-    
-    start_time = time.time()
-    for i in range(u.size):
-        for j in range(s.size):
-            SpkTime, _, _ = inf.run(T = T, input_mean = u[i], input_std = s[j], input_type = input_type, show_message = False)
-            emp_u[i,j], emp_s[i,j] = inf.empirical_maf(SpkTime)    
-                    
-            progress = (i*N + j +1)/N/N*100
-            elapsed_time = (time.time()-start_time)/60
-            print('Progress: {:.2f}%; Time elapsed: {:.2f} min'.format(progress, elapsed_time ))
-            
-    
-    #maf = MomentActivation()
-    
-    maf_u = np.zeros((u.size,s.size))
-    maf_s = np.zeros((u.size,s.size))
-    
-    for j in range(s.size):
-        maf_u[:,j] = inf.maf.mean(u,s[j]*np.ones(u.size))
-        maf_s[:,j], _ = inf.maf.std(u,s[j]*np.ones(u.size))
-    
-    return emp_u, emp_s, maf_u, maf_s, u, s
+
     
 
 def simple_demo(input_type):
