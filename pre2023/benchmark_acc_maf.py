@@ -1,5 +1,8 @@
 from pre2023.model_validation.validate_w_spiking_neuron import InteNFire
 import numpy as np
+import scipy as sp
+import time
+from mnn_core.maf import *
 from matplotlib import pyplot as plt
 
 def input_output_anlaysis(input_type):
