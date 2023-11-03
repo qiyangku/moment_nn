@@ -161,7 +161,7 @@ def parameter_sweep_amplitude(save_results = False):
         spktime, _, _ = inf.run(T = T, freq = freq, show_message = False, record_v=False)
         SpkTimes.append(spktime)
                 
-        progress = (i +1)/freqs.size*100
+        progress = (i +1)/amps.size*100
         elapsed_time = (time.time()-start_time)/60
         print('Progress: {:.2f}%; Time elapsed: {:.2f} min'.format(progress, elapsed_time ))
     
