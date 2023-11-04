@@ -21,21 +21,26 @@ class InteNFire():
         self.dt = 1e-3 #integration time step (ms)
         self.num_neurons = num_neurons
         #self.T = T    
-        self.we = 1 #synaptic weight; set to 1 so that w = w^2;  
+        self.we = 0.1 #synaptic weight; set to 1 so that w = w^2;  
+        self.wi = -0.4
         self.maf = MomentActivation()
         
         # inhomogeneous input parameters
-        self.u_ext = 1 # kHz average rate        
+        self.ue_ext = 26.4 # kHz average rate; values picked so output would have a mean rate of around 10 Hz and FF of 0.4
+        self.ui_ext = 4.6
         self.phase = 2*np.pi*np.random.rand(num_neurons) # random phase shift        
-        self.A = 1 # same as u_ext by default, A must be smaller than u_ext
+        self.A = 1
+        
         #self.T = 10e3 #ms 
     
     def input_spikes(self, t):
-                
-        r = self.u_ext*(1 + self.A*np.sin( 2*np.pi*self.freq*t + self.phase) )
-        is_spk = np.random.rand(self.num_neurons) < r*self.dt
+             
+        # excitatory input rate
+        re = self.ue_ext*(1 + self.A*np.sin( 2*np.pi*self.freq*t + self.phase) )        #oscillating excitatory input
+        ext_spk = np.random.rand(self.num_neurons) < re*self.dt #fixed rate for inhibitory input
+        inh_spk = np.random.rand(self.num_neurons) < self.ui_ext*self.dt
         
-        return is_spk
+        return ext_spk, inh_spk
         
         
     
@@ -60,8 +65,10 @@ class InteNFire():
                 
         start_time = time.time()
         for i in range(num_timesteps):
-
-            input_current = self.we*self.input_spikes(i*self.dt)                 
+            
+            ext_spk, inh_spk = self.input_spikes(i*self.dt)
+            
+            input_current = self.we*ext_spk + self.wi*inh_spk
          
             v += -v*self.L*self.dt + input_current
             
@@ -193,6 +200,27 @@ def spk_data_analysis():
     
     return mu, var, freqs, bin_edges[1:]
 
+def spk_data_analysis_v_amps():
+    dat = np.load('./runs/snn_inhom_input_vary_amp.npz', allow_pickle=True)
+    SpkTimes = dat['SpkTimes']
+    amps = dat['amps']
+    num_trials = dat['num_trials']
+    T = dat['T']
+    
+    nbins = 100 # increment 10 ms
+    mu = np.zeros((len(amps), nbins))
+    var = np.zeros((len(amps), nbins))
+    bin_edges = np.linspace(0,T, nbins+1)
+    for i in range(amps.size):
+        spkcount = np.zeros((num_trials, nbins))
+        for j in range(len(SpkTimes[i])):         
+            h, _ = np.histogram(SpkTimes[i][j], bin_edges )
+            spkcount[j,:] = np.cumsum(h)
+        mu[i,:] = np.mean(spkcount, axis=0)/bin_edges[1:]
+        var[i,:] = np.var(spkcount, axis=0)/bin_edges[1:]
+    
+    return mu, var, amps, bin_edges[1:]
+
 def theoretical_prediction(dT, u_ext, w, c):
     ''' dT = spike count time windows, 
     u_ext = avg Poisson rate
@@ -216,57 +244,86 @@ def theoretical_prediction(dT, u_ext, w, c):
     
 
 if __name__=='__main__':
+    # inf = InteNFire(num_neurons = 100) 
+    # spktime, _, _ = inf.run(T = 1e3, freq = 1, show_message = False, record_v=False)
+    # u, s = inf.empirical_maf(spktime)
 
     # # SIMULATION
-    #parameter_sweep(save_results=True)
-    parameter_sweep_amplitude(save_results=True)
-    # ANALYSIS
-    #mu, var, freqs, readout_time = spk_data_analysis()    
-    #u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T = theoretical_prediction(readout_time, 1, 1, 1)
+    parameter_sweep(save_results=True)
+    #parameter_sweep_amplitude(save_results=True)
+#     # ANALYSIS
+#     mu, var, freqs, readout_time = spk_data_analysis()    
+#     mu2, var2, amps, readout_time = spk_data_analysis_v_amps()
+#     u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T = theoretical_prediction(readout_time, 1, 1, 1)
+# #%%    
+#     # #################
+#     # # VISUALIZATION
+#     dT_indx = 99 # 10 in total
+#     print('Readout time (ms): ', readout_time[dT_indx])
+#     plt.close('all')
+#     plt.figure(figsize=(7,3))
+#     plt.subplot(1,2,1)
+#     plt.semilogx(freqs, mu[:,dT_indx]) # empirical result
+#     plt.semilogx(  [freqs[0] , freqs[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
+#     #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
+#     plt.ylim([0, 0.025])
+#     plt.ylabel('Mean firing rate (kHz)')
+#     plt.xlabel('Oscillation frequency (kHz)')
     
-    # # #################
-    # # # VISUALIZATION
-    # dT_indx = 99 # 10 in total
-    # print('Readout time (ms): ', readout_time[dT_indx])
-    # plt.close('all')
-    # plt.figure(figsize=(7,3))
-    # plt.subplot(1,2,1)
-    # plt.semilogx(freqs, mu[:,dT_indx]) # empirical result
-    # plt.semilogx(  [freqs[0] , freqs[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
-    # #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
-    # plt.ylim([0, 0.025])
-    # plt.ylabel('Mean firing rate (kHz)')
-    # plt.xlabel('Oscillation frequency (kHz)')
+#     plt.subplot(1,2,2)
+#     plt.semilogx(freqs, var[:,dT_indx]/mu[:,dT_indx]) # dT =1000 ms
+#     plt.semilogx(  [freqs[0] , freqs[-1]], s_out_long_T[dT_indx]**2/u_out_long_T[dT_indx]*np.ones(2)  ,'--' )
+#     #plt.semilogx(  [freqs[0] , freqs[-1]], s_out_short_T[dT_indx]**2*np.ones(2)  ,'--' )
+#     #plt.ylim([0, 0.025])
+#     plt.xlabel('Oscillation frequency (kHz)')
+#     plt.ylabel('Fano factor')
+#     #plt.ylim([])
+#     #plt.semilogx(freqs, var[:,-1])
     
-    # plt.subplot(1,2,2)
-    # plt.semilogx(freqs, var[:,dT_indx]/mu[:,dT_indx]) # dT =1000 ms
-    # plt.semilogx(  [freqs[0] , freqs[-1]], s_out_long_T[dT_indx]**2/u_out_long_T[dT_indx]*np.ones(2)  ,'--' )
-    # #plt.semilogx(  [freqs[0] , freqs[-1]], s_out_short_T[dT_indx]**2*np.ones(2)  ,'--' )
-    # #plt.ylim([0, 0.025])
-    # plt.xlabel('Oscillation frequency (kHz)')
-    # plt.ylabel('Fano factor')
-    # plt.ylim([])
-    # #plt.semilogx(freqs, var[:,-1])
+#     plt.tight_layout()
     
-    # plt.tight_layout()
+#     #################
+#     dT_indx = 99 # 10 in total
+#     print('Readout time (ms): ', readout_time[dT_indx])
     
-    # # ################
+#     plt.figure(figsize=(7,3))
+#     plt.subplot(1,2,1)
+#     plt.plot(amps, mu2[:,dT_indx]) # empirical result
+#     plt.plot(  [amps[0] , amps[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
+#     #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
+#     plt.ylim([0, 0.025])
+#     plt.ylabel('Mean firing rate (kHz)')
+#     plt.xlabel('Oscillation amplitude')
+    
+#     plt.subplot(1,2,2)
+#     plt.plot(amps, var2[:,dT_indx]/mu2[:,dT_indx]) # dT =1000 ms
+#     plt.plot(  [amps[0] , amps[-1]], s_out_long_T[dT_indx]**2/u_out_long_T[dT_indx]*np.ones(2)  ,'--' )
+#     #plt.semilogx(  [freqs[0] , freqs[-1]], s_out_short_T[dT_indx]**2*np.ones(2)  ,'--' )
+#     #plt.ylim([0, 0.025])
+#     plt.xlabel('Oscillation amplitude (kHz)')
+#     plt.ylabel('Fano factor')
+#     #plt.ylim([])
+#     #plt.semilogx(freqs, var[:,-1])
+    
+#     plt.tight_layout()
+    
+#     # ################
     
     
-    # plt.close('all')
-    # plt.figure()
-    # plt.plot(readout_time, u_out_short_T)
-    # plt.plot(readout_time, s_out_short_T**2)
-    # plt.xlabel('Readout time (ms)')
-    # plt.title('Short time window prediction')
-    # #plt.ylabel('Mean firing rate (sp/ms)')
+#     # plt.close('all')
+#     # plt.figure()
+#     # plt.plot(readout_time, u_out_short_T)
+#     # plt.plot(readout_time, s_out_short_T**2)
+#     # plt.xlabel('Readout time (ms)')
+#     # plt.title('Short time window prediction')
+#     # #plt.ylabel('Mean firing rate (sp/ms)')
     
-    # plt.figure()
-    # plt.plot(readout_time, u_out_long_T)
-    # plt.plot(readout_time, s_out_long_T**2)    
-    # plt.xlabel('Readout time (ms)')
-    # plt.title('Long time window prediction')
-    # #plt.ylabel('Firing variability')
+#     # plt.figure()
+#     # plt.plot(readout_time, u_out_long_T)
+#     # plt.plot(readout_time, s_out_long_T**2)    
+#     # plt.xlabel('Readout time (ms)')
+#     # plt.title('Long time window prediction')
+#     # #plt.ylabel('Firing variability')
     
-    print('\007') #make a sound when finish
+#     print('\007') #make a sound when finish
         
