@@ -156,8 +156,8 @@ def parameter_sweep_amplitude(save_results = False):
     # range of frequencies? Biological range: delta (1-4 Hz), theta (4-8 Hz), beta (13-30 Hz), gamma (30-150 Hz)
     # take T=1e3 as long window, T=1e2 => 1e-3 KHz
     
-    amps = np.linspace(0,1,100) #!!! debug # samplitude of input oscillation # when c=0, the input is stationary and MA should work perfectly
-    freq = 0.0014174741629268055 # resonance frequency (see snn_inhom_input.npz)
+    amps = np.linspace(0,1,100) # debug # samplitude of input oscillation # when c=0, the input is stationary and MA should work perfectly
+    freq = 0.0014174741629268055 # resonance frequency (see snn_inhom_input.npz)    
     inf = InteNFire(num_neurons = num_trials) #time unit: ms
     
     SpkTimes = []
@@ -221,25 +221,29 @@ def spk_data_analysis_v_amps():
     
     return mu, var, amps, bin_edges[1:]
 
-def theoretical_prediction(dT, u_ext, w, c):
+def theoretical_prediction(dT, ue_ext, ui_ext, we, wi, c):
     ''' dT = spike count time windows, 
     u_ext = avg Poisson rate
     w = str of synaptic weight
     c = str of inhomogeneity
+    
+    !!!!!!!!! need to include inhibitory input
+    
     '''
     maf = MomentActivation()
     
-    u_in = w*u_ext*np.ones( dT.size )
-    s_in_short = w*np.sqrt(u_ext + 0.5*u_ext*u_ext*c*c*dT)
-    s_in_long = w*np.sqrt(u_ext)*np.ones( dT.size )
+    u_in = (we*ue_ext + wi*ui_ext)*np.ones( dT.size )
     
-    u_out_short_T = maf.mean(u_in, s_in_short)
-    s_out_short_T, _ = maf.std(u_in, s_in_short)
+    #s_in_short = w*np.sqrt(u_ext + 0.5*u_ext*u_ext*c*c*dT)
+    s_in_long = np.sqrt(we*we*ue_ext + wi*wi*ui_ext)*np.ones( dT.size )
+    
+    #u_out_short_T = maf.mean(u_in, s_in_short)
+    #s_out_short_T, _ = maf.std(u_in, s_in_short)
     
     u_out_long_T = maf.mean(u_in, s_in_long)    
     s_out_long_T, _ = maf.std(u_in, s_in_long)
     
-    return u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T
+    return u_out_long_T, s_out_long_T #u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T
     
     
 
@@ -249,16 +253,19 @@ if __name__=='__main__':
     # u, s = inf.empirical_maf(spktime)
 
     # # SIMULATION
-    parameter_sweep(save_results=True)
-    #parameter_sweep_amplitude(save_results=True)
+    #parameter_sweep(save_results=True)
+    parameter_sweep_amplitude(save_results=True)
+
 #     # ANALYSIS
 #     mu, var, freqs, readout_time = spk_data_analysis()    
-#     mu2, var2, amps, readout_time = spk_data_analysis_v_amps()
-#     u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T = theoretical_prediction(readout_time, 1, 1, 1)
-# #%%    
+#     #mu2, var2, amps, readout_time = spk_data_analysis_v_amps()
+#     #u_out_short_T, s_out_short_T, u_out_long_T, s_out_long_T = theoretical_prediction(readout_time, 0.8, 1, 1)
+#     u_out_long_T, s_out_long_T = theoretical_prediction(readout_time, 26.4, 4.6, 0.1, -0.4, 1)
+# #%%
 #     # #################
 #     # # VISUALIZATION
-#     dT_indx = 99 # 10 in total
+#     #dT_indx = 99 #
+#     dT_indx = 99
 #     print('Readout time (ms): ', readout_time[dT_indx])
 #     plt.close('all')
 #     plt.figure(figsize=(7,3))
@@ -266,7 +273,7 @@ if __name__=='__main__':
 #     plt.semilogx(freqs, mu[:,dT_indx]) # empirical result
 #     plt.semilogx(  [freqs[0] , freqs[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
 #     #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
-#     plt.ylim([0, 0.025])
+#     #plt.ylim([0, 0.025])
 #     plt.ylabel('Mean firing rate (kHz)')
 #     plt.xlabel('Oscillation frequency (kHz)')
     
@@ -282,32 +289,32 @@ if __name__=='__main__':
     
 #     plt.tight_layout()
     
-#     #################
-#     dT_indx = 99 # 10 in total
-#     print('Readout time (ms): ', readout_time[dT_indx])
+    # #################
+    # dT_indx = 99 # 10 in total
+    # print('Readout time (ms): ', readout_time[dT_indx])
     
-#     plt.figure(figsize=(7,3))
-#     plt.subplot(1,2,1)
-#     plt.plot(amps, mu2[:,dT_indx]) # empirical result
-#     plt.plot(  [amps[0] , amps[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
-#     #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
-#     plt.ylim([0, 0.025])
-#     plt.ylabel('Mean firing rate (kHz)')
-#     plt.xlabel('Oscillation amplitude')
+    # plt.figure(figsize=(7,3))
+    # plt.subplot(1,2,1)
+    # plt.plot(amps, mu2[:,dT_indx]) # empirical result
+    # plt.plot(  [amps[0] , amps[-1]], u_out_long_T[dT_indx]*np.ones(2)   ,'--') # long readout time, fast oscillation
+    # #plt.semilogx(  [freqs[0] , freqs[-1]], u_out_short_T[dT_indx]*np.ones(2)  ,'--' ) # short readout time, slow oscillation
+    # plt.ylim([0, 0.025])
+    # plt.ylabel('Mean firing rate (kHz)')
+    # plt.xlabel('Oscillation amplitude')
     
-#     plt.subplot(1,2,2)
-#     plt.plot(amps, var2[:,dT_indx]/mu2[:,dT_indx]) # dT =1000 ms
-#     plt.plot(  [amps[0] , amps[-1]], s_out_long_T[dT_indx]**2/u_out_long_T[dT_indx]*np.ones(2)  ,'--' )
-#     #plt.semilogx(  [freqs[0] , freqs[-1]], s_out_short_T[dT_indx]**2*np.ones(2)  ,'--' )
-#     #plt.ylim([0, 0.025])
-#     plt.xlabel('Oscillation amplitude (kHz)')
-#     plt.ylabel('Fano factor')
-#     #plt.ylim([])
-#     #plt.semilogx(freqs, var[:,-1])
+    # plt.subplot(1,2,2)
+    # plt.plot(amps, var2[:,dT_indx]/mu2[:,dT_indx]) # dT =1000 ms
+    # plt.plot(  [amps[0] , amps[-1]], s_out_long_T[dT_indx]**2/u_out_long_T[dT_indx]*np.ones(2)  ,'--' )
+    # #plt.semilogx(  [freqs[0] , freqs[-1]], s_out_short_T[dT_indx]**2*np.ones(2)  ,'--' )
+    # #plt.ylim([0, 0.025])
+    # plt.xlabel('Oscillation amplitude (kHz)')
+    # plt.ylabel('Fano factor')
+    # #plt.ylim([])
+    # #plt.semilogx(freqs, var[:,-1])
     
-#     plt.tight_layout()
+    # plt.tight_layout()
     
-#     # ################
+    # # ################
     
     
 #     # plt.close('all')
