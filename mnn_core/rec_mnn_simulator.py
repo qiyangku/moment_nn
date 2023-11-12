@@ -39,7 +39,7 @@ class RecurrentMNN():
         # else:
         #     self.corr_ext = np.eye( self.N ) 
         
-        self.W = W #synaptic weight matrix (csr)
+        self.W = W # synaptic weight matrix (csr)
         self.Wt = W.T # store transpose (csc)
         self.input_gen = input_gen # input generator, class object
         self.maf = MomentActivation()

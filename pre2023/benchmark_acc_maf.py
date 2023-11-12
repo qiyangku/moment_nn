@@ -48,15 +48,66 @@ def input_output_anlaysis(input_type):
     
     return emp_u, emp_s, maf_u, maf_s, u, s
 
-if __name__=='__main__':
-    emp_u, emp_s, maf_u, maf_s, u, s = input_output_anlaysis(input_type = 'spike')
-    
-    #maybe I should increase the # of neurons (# trials), and decrease simulation time not 10s but 2s is enougth?
-    #so better parallelization and speed
-    #omg this snn simulation takes forever, thanks to dt=0.001 ms. So 10^6 steps needed per 1 s simulation
-    
-    np.savez('./runs/benchmark_acc_maf.npz', emp_u=emp_u, emp_s=emp_s, maf_u=maf_u, maf_s=maf_s, u=u, s=s)
+def plot_results():
+    dat = np.load('./runs/benchmark_acc_maf.npz')
 
+    emp_u = dat['emp_u']
+    emp_s = dat['emp_s']
+
+    emp_u[10,0] = 0 # fix numerical integration error at critical point
+
+
+    maf_u = dat['maf_u']
+    maf_s = dat['maf_s']
+
+    abs_err_u = emp_u.T - maf_u.T
+    abs_err_s = emp_s.T - maf_s.T
+
+    rel_err_u = abs_err_u.T/emp_u.T
+    rel_err_s = abs_err_s.T/emp_u.T
+
+
+    minmax_u = np.max(np.abs(abs_err_u))
+    print('max u abs. error:', minmax_u)
+    minmax_s = np.max(np.abs(abs_err_s))
+    print('max s abs. error:', minmax_s)
+
+    extent = (dat['u'][0], dat['u'][-1], dat['s'][0], dat['s'][-1])
+
+    plt.close('all')
+
+    plt.subplot(2,2,1)
+    plt.imshow(maf_u.T,  origin ='lower',  extent = extent  , interpolation='none')
+    plt.xticks([])
+    plt.ylabel('Input current std (mV/ms$^{1/2}$)')
+    plt.colorbar()
+    plt.title('Mean firing rate $\mu$ (sp/ms)', fontsize= 11)
+
+    plt.subplot(2,2,2)
+    plt.imshow(maf_s.T,  origin ='lower',  extent = extent , interpolation='none')
+    plt.xticks([])
+    plt.colorbar()
+    plt.title('Firing variability $\sigma$ (sp/ms$^{1/2}$)', fontsize= 11)
+
+    plt.subplot(2,2,3)
+    plt.imshow(abs_err_u, vmin = -minmax_u, vmax = minmax_u,  origin ='lower', cmap = 'coolwarm', extent = extent ,interpolation='none')
+    plt.xlabel('Input current mean (mV/ms)')
+    plt.ylabel('Input current std (mV/ms$^{1/2}$)')
+    plt.colorbar()
+
+    plt.subplot(2,2,4)
+    plt.imshow(abs_err_s, vmin = -minmax_s, vmax = minmax_s,  origin ='lower', cmap = 'coolwarm', extent = extent ,interpolation='none')
+    plt.xlabel('Input current mean (mV/ms)')
+    plt.colorbar()    
+    
+    return
+
+if __name__=='__main__':
+    
+    #emp_u, emp_s, maf_u, maf_s, u, s = input_output_anlaysis(input_type = 'spike')
+    #np.savez('./runs/benchmark_acc_maf.npz', emp_u=emp_u, emp_s=emp_s, maf_u=maf_u, maf_s=maf_s, u=u, s=s)
+    plot_results()
+    
 
 # #%% 2h - 5x5
 # plt.close('all')

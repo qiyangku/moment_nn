@@ -1,6 +1,4 @@
 """
-Created on Mon Jun 21 2023
-
 For benchmarking accuracy of mnn for varying input correlation.
 
 @author: Yang Qi

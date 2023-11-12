@@ -19,13 +19,14 @@ class InputGenerator():
         self.NI = config['NI']
         self.N = config['NE']+config['NI']
         self.uext = config['uext']
-        we = config['wee']['mean']
+        we = config['wee']['mean']        
         #define external input mean
         #
         self.input_mean = we*self.uext*np.ones((self.N,1)) #input current mean
         
         #calculate external input cov (assume independent Poisson spikes)
         self.input_cov = we*we*self.uext*np.eye(self.N) 
+                
         
         #self.L_ext = np.linalg.cholesky(self.input_cov)        
         
@@ -36,7 +37,7 @@ class RecurrentMNN():
         self.NE = config['NE']
         self.NI = config['NI'] # number of neuron per layer
         self.N = self.NE + self.NI
-        self.dt = 0.1 #integration time-step
+        self.dt = 0.1 #integration time-step # we only care about steady state, so make this larger for speed
         self.tau = 1 #synaptic? time constant
         
         self.W = W #synaptic weight matrix (csr)
@@ -46,7 +47,22 @@ class RecurrentMNN():
         self.maf.Vth = config['Vth']
         self.maf.Vres = config['Vres']
         self.maf.Tref = config['Tref']
+        self.delay = config['delay']
+        
+        
+    def summation_no_corr(self, mean_in, std_in):
+        mean_out = self.W.dot(mean_in)        
+        mean_out += self.input_gen.input_mean.flatten() #external input mean
+        
+        var_out = (self.W**2) @ (std_in**2) + np.diag(self.input_gen.input_cov)
+        
+        return mean_out, np.sqrt(var_out)
     
+    def forward_no_corr(self, mean_in, std_in):
+        mean_out, std_out = self.summation_no_corr(mean_in, std_in)
+        u = self.maf.mean( mean_out, std_out)
+        s,_ = self.maf.std( mean_out, std_out)
+        return u, s
     
     def summation(self, mean_in, std_in, corr_in):
         '''INPUTS: input mean/std/corr, stim = stimulus value'''
@@ -98,6 +114,47 @@ class RecurrentMNN():
         #    rho[i,i]=1.0
         return u, s, rho
     
+    
+    def run_no_corr(self, T=10, record_ts = True):
+        self.nsteps = int(T/self.dt)
+        self.delay_steps = int(self.delay/self.dt)                
+        # initial condition
+        u = np.zeros(self.N) #just 1D array, no column/row 
+        s = np.zeros(self.N)
+        
+        if record_ts: # cached data for synaptic delay
+            U = np.zeros((self.N, self.nsteps ))
+            S = np.zeros((self.N, self.nsteps ))
+        
+        cache_U = np.zeros((self.N, self.delay_steps ))
+        cache_S = np.zeros((self.N, self.delay_steps ))
+            
+        a = self.dt/self.tau
+        
+        for i in range(self.nsteps):
+            if record_ts: #save time series data
+                U[:,i] = u.ravel()
+                S[:,i] = s.ravel()
+            
+            # read oldest cached data
+            u_delayed = cache_U[:,-1]
+            s_delayed = cache_S[:,-1]                
+            
+            # update cache
+            cache_U = np.roll(cache_U,1,axis = 1)
+            cache_S = np.roll(cache_S,1,axis = 1)                
+            cache_U[:,0] = u.ravel() 
+            cache_S[:,0] = s.ravel()
+            
+            maf_u, maf_s = self.forward_no_corr(u_delayed, s_delayed)                  
+            
+            u = (1-a)*u + a*maf_u
+            s = (1-a)*s + a*maf_s
+            
+        if record_ts:
+            return U, S
+        else:
+            return u, s
     
     def run(self, T = 10, record_ts = True):
         self.nsteps = int(T/self.dt)
@@ -164,4 +221,3 @@ class RecurrentMNN():
     #             #axes[i,j].set_title('we={}, IE_ratio={}'.format(dat[0][i],dat[0][j]))
                 
         
-    

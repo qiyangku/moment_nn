@@ -23,7 +23,7 @@ from matplotlib import pyplot as plt
 # parameter settings from Moreno-Bote (2014)
 
 def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
-    w = 1    
+    w = 0.1    
 
     config = {
     'Vth': 20, #mV, firing threshold, default 20
@@ -39,11 +39,11 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
     'uext': uext, # external firing rate kHz; rate*in-degree*weight = 0.01*1000*0.1 = 1 kHz
     #'wie':{'mean': 5.9, 'std': 0.0},    
     #'wii':{'mean': -9.4, 'std': 0.0},        
-    'conn_prob': 0.8, #connection probability; N.B. high prob leads to poor match between mnn and snn
+    'conn_prob': 0.1, #connection probability; N.B. high prob leads to poor match between mnn and snn
     'sparse_weight': False, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed':None,
     'dT': 200, #ms spike count time window
-    'delay': 0.5, # synaptic delay (uniform)
+    'delay': 0.2, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
     }
 
     return config
@@ -104,9 +104,9 @@ def single_run(pop_size=1250, T_mnn = 1, record_ts = False ):
     # simulate mnn
     t0 = time.perf_counter()
     #T_mnn = 1    #in practice needs 10 >> tau
-    u,s,rho = mnn_model.run(T_mnn, record_ts = record_ts)
+    u,s = mnn_model.run_no_corr(T_mnn, record_ts = record_ts)
     print('Time elapsed (min): ', int(time.perf_counter()-t0)/60)
-    return u, s, rho
+    return u, s
     #mean_frate[0,i] = np.mean(u)
     #mean_corr[0,i] = np.mean(rho[indx])
     #mnn_corr[:,i] = rho[indx]
@@ -193,20 +193,12 @@ def plot_results():
     
 
 if __name__=='__main__':
-    #u, s, rho = single_run(pop_size=2000, T_mnn = 1)
-    #u, s, rho = single_run(pop_size=2000, T_mnn = 10, record_ts = True)
     
-    uext, ie_ratio, U, S, R = para_sweep(pop_size=1000, T_mnn=10, save_results=True)
-    
-    ''' Issue: 
-    1. both E/I populations are dominated by (uncorr) external input
-        As a result, recurrent weight doesn't make much difference!
-        Need to fix external input weight and rate.
-        And scale the recurr weight (relative to in-degree), to make fb/ff contributions comparable.
-    2. Correlation is washed out by external input! => pure excitatory Poisson spk => very weak current fluctuation
-    '''
+    u, s = single_run(pop_size=10000, T_mnn = 10, record_ts = True)
 
-    plot_results()
+#    uext, ie_ratio, U, S, R = para_sweep(pop_size=1000, T_mnn=10, save_results=True)
+
+#    plot_results()
 #from matplotlib import pyplot as plt
 
 #plt.plot(np.mean(u,axis=0))
