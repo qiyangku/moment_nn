@@ -32,12 +32,52 @@ class InputGenerator():
         
         return
 
+def gen_synaptic_weight(config):
+    Ne = config['NE']
+    Ni = config['NI']
+    N = Ne+Ni
+        
+    if config['randseed'] is None:
+        W = np.random.randn(N,N)
+        coin_toss = np.random.rand(N,N)    
+    else:
+        rng = np.random.default_rng( config['randseed'] )
+        W = rng.standard_normal(size=(N, N))
+        coin_toss = rng.uniform(size=(N,N))
+    
+    #   excitatory weight
+    W[:Ne,:Ne] = W[:Ne,:Ne]*config['wee']['std'] + config['wee']['mean']
+    W[Ne:,:Ne] = W[Ne:,:Ne]*config['wie']['std'] + config['wie']['mean']    
+    W[:,:Ne] = np.abs(W[:,:Ne])
+    
+    #   inhibitory weight
+    W[:Ne,Ne:] = W[:Ne,Ne:]*config['wei']['std'] + config['wei']['mean']
+    W[Ne:,Ne:] = W[Ne:,Ne:]*config['wii']['std'] + config['wii']['mean']
+    W[:,Ne:] = -np.abs(W[:,Ne:])
+    
+    #apply connection probability (indegree should then be poisson)
+    W[ coin_toss > config['conn_prob'] ] = 0
+    
+    # #apply scaling # for Brunel 2000 no scaling applied! W is specified in absolute terms
+    # W[:Ne,:Ne] *= 1/(Ne-1)
+    # W[Ne:,:Ne] *= 1/Ne
+    # W[:Ne,Ne:] *= 1/Ni    
+    # W[Ne:,Ne:] *= 1/(Ni-1)
+    
+    #remove diagonal (self-conneciton)
+    np.fill_diagonal(W,0)
+    
+    
+    if config['sparse_weight']:
+        W = sp.sparse.csr_matrix(W) # W.dot() is efficient but not ().dot(W)        
+    return W
+
 class RecurrentMNN():
     def __init__(self, config, W, input_gen):
         self.NE = config['NE']
         self.NI = config['NI'] # number of neuron per layer
         self.N = self.NE + self.NI
-        self.dt = 0.1 #integration time-step # we only care about steady state, so make this larger for speed
+        self.dt = config['dt'] #integration time-step # we only care about steady state, so make this larger for speed
         self.tau = 1 #synaptic? time constant
         
         self.W = W #synaptic weight matrix (csr)
@@ -117,7 +157,7 @@ class RecurrentMNN():
     
     def run_no_corr(self, T=10, record_ts = True):
         self.nsteps = int(T/self.dt)
-        self.delay_steps = int(self.delay/self.dt)                
+        self.delay_steps = int(self.delay/self.dt)             
         # initial condition
         u = np.zeros(self.N) #just 1D array, no column/row 
         s = np.zeros(self.N)
@@ -126,8 +166,8 @@ class RecurrentMNN():
             U = np.zeros((self.N, self.nsteps ))
             S = np.zeros((self.N, self.nsteps ))
         
-        cache_U = np.zeros((self.N, self.delay_steps ))
-        cache_S = np.zeros((self.N, self.delay_steps ))
+        cache_U = np.zeros((self.N, self.delay_steps+1 )) # NB for 1 step of delay, need to save step+1 entries
+        cache_S = np.zeros((self.N, self.delay_steps+1 ))
             
         a = self.dt/self.tau
         

@@ -17,7 +17,7 @@ Plan:
 #from mnn_core.rec_snn_simulator import *
 #from mnn_core.rec_mnn_simulator import RecurrentMNN
 from pre2023.brunel2000.rec_mnn_simulator import *
-from mnn_core.preprocessing import gen_synaptic_weight
+#from mnn_core.preprocessing import gen_synaptic_weight <-- this one scales weight by # of neurons...
 from matplotlib import pyplot as plt
 
 # parameter settings from Moreno-Bote (2014)
@@ -32,10 +32,10 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
     'NE': int(0.8*N),
     'NI': int(0.2*N),
     'g': ie_ratio,     #I-E ratio
-    'wee':{'mean': w, 'std': 0.01},
-    'wei':{'mean': -w*ie_ratio, 'std': 0.01},
-    'wie':{'mean': w, 'std': 0.01},    
-    'wii':{'mean': -w*ie_ratio, 'std': 0.01},
+    'wee':{'mean': w, 'std': 1e-6},
+    'wei':{'mean': -w*ie_ratio, 'std': 1e-6},
+    'wie':{'mean': w, 'std': 1e-6},    
+    'wii':{'mean': -w*ie_ratio, 'std': 1e-6},
     'uext': uext, # external firing rate kHz; rate*in-degree*weight = 0.01*1000*0.1 = 1 kHz
     #'wie':{'mean': 5.9, 'std': 0.0},    
     #'wii':{'mean': -9.4, 'std': 0.0},        
@@ -43,7 +43,8 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
     'sparse_weight': False, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed':None,
     'dT': 200, #ms spike count time window
-    'delay': 0.2, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
+    'delay': 0.1, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
+    'dt':0.02, # integration time step for mnn
     }
 
     return config
@@ -51,15 +52,31 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
 
 def para_sweep(pop_size, T_mnn = 10, save_results=False):
     '''Do a parameter sweep over the weight space'''
+    
+    #10 x 10 sweep can be done in 12 hrs; 30x30 in 2 days, for N=12500, no correlation, dt=0.02
+    
+    
     #uext = np.linspace(0.0 , 2.0 ,11)
     #ie_ratio = np.linspace(0.0 , 8.0 ,10)
     
-    uext = np.linspace(0.0 , 2.0 ,5)[1:]  # u=0 is pointless
+    uext = np.linspace(0.0 , 40.0 ,5)[1:]  # u=0 is pointless
     ie_ratio = np.linspace(0.0 , 8.0 ,5)[1:]
     
-    U = np.zeros( (len(uext), len(ie_ratio), pop_size) )
-    S = np.zeros( (len(uext), len(ie_ratio), pop_size) )
-    R = np.zeros( (len(uext), len(ie_ratio), pop_size, pop_size) )
+    nsteps = 100 # down sample time steps to save
+    nsamples = 10 # sample neurons
+    
+    U_pop = np.zeros( (len(uext), len(ie_ratio), nsteps) ) # population averaged 
+    S_pop = np.zeros( (len(uext), len(ie_ratio), nsteps) )
+    
+    # need to save individual neurons as well.. firing rates are highly inhomogeneous!!
+    U_end = np.zeros( (len(uext), len(ie_ratio), pop_size) )
+    S_end = np.zeros( (len(uext), len(ie_ratio), pop_size) )
+    
+    # save full time course of a small number of neurons 
+    U_sample = np.zeros( (len(uext), len(ie_ratio), nsamples, nsteps) )
+    S_sample = np.zeros( (len(uext), len(ie_ratio), nsamples, nsteps) )
+    
+    #R = np.zeros( (len(uext), len(ie_ratio), pop_size, pop_size) ) #no correlation, too expensive to compute
     
     t0 = time.perf_counter()
     for i in range(len(uext)):
@@ -70,16 +87,29 @@ def para_sweep(pop_size, T_mnn = 10, save_results=False):
             input_gen = InputGenerator(config)
             mnn_model = RecurrentMNN(config, W, input_gen)
 
-            u,s,rho = mnn_model.run(T_mnn, record_ts = False)
-            U[i,j,:] = u.flatten()#[:,-1]
-            S[i,j,:] = s.flatten()#[:,-1]
-            R[i,j,:,:] = rho#[:,:,-1]
+            u,s= mnn_model.run_no_corr(T_mnn, record_ts = True)
+            
+            down_sample_ratio = int(u.shape[1]/nsteps)
+            
+            # save mean only not good enough. need to down sample time and neurons
+            U_pop[i,j,:] = np.mean(u[:,::down_sample_ratio], axis=0)
+            S_pop[i,j,:] = np.mean(s[:,::down_sample_ratio], axis=0)
+            
+            U_end[i,j,:] = u[:,-1]
+            S_end[i,j,:] = s[:,-1]
+            
+            U_sample[i,j,:,:] = u[:nsamples,::down_sample_ratio]
+            S_sample[i,j,:,:] = s[:nsamples,::down_sample_ratio]
+            
+            #R[i,j,:,:] = rho#[:,:,-1]
             #print('WE={}, ie_ratio={}'.format(WE[i],ie_ratio[j]))
             print('Time Elapsed: ', int(time.perf_counter() -t0) )
     if save_results:
-        np.savez('rec_mnn_para_sweep.npz', uext=uext, config=config, ie_ratio=ie_ratio, mnn_mean=U,mnn_std=S,mnn_corr=R)
+        np.savez('rec_mnn_delay_para_sweep.npz', uext=uext, config=config, ie_ratio=ie_ratio, mnn_mean_pop=U_pop,mnn_std_pop=S_pop, \
+                 mnn_mean_end = U_end, mnn_std_end=S_end, mnn_mean_sample=U_sample, mnn_std_sample=S_sample
+                 )
 
-    return uext, ie_ratio, U, S, R    
+    return uext, ie_ratio, U_pop, S_pop
     # def gen_gaussian_current(self, s, dt):     
     #     u = self.input_mean(s)
     #     z = np.matmul(self.L_ext, np.random.randn(self.N,1))        
@@ -94,7 +124,11 @@ def single_run(pop_size=1250, T_mnn = 1, record_ts = False ):
     #snn_corr = np.zeros((  int(pop_size*(pop_size-1)/2) , m ))
     #mnn_corr = np.zeros((  int(pop_size*(pop_size-1)/2) , m ))
     
-    config = gen_config( pop_size )
+    #config = gen_config( N=pop_size, ie_ratio=8.0, uext=40 ) #<-- highly heterogeneous rate and FF, even though network is homo!
+    config = gen_config( N=pop_size, ie_ratio=3.0, uext=20 )
+    # NB: uext are multiples of 0.01 in Brunel 2000; 
+    # For me they need to be multiplied by the in-degree, so 10 kHz is the baseline
+    
     W = gen_synaptic_weight(config) #doesn't take too much time with 1e4 neurons
     
     input_gen = InputGenerator(config)
@@ -129,7 +163,7 @@ def single_run(pop_size=1250, T_mnn = 1, record_ts = False ):
     #print('Total time elapsed (min): ', np.round((time.perf_counter()-t00)/60,2))
 
 def plot_results():
-    dat = np.load('rec_mnn_para_sweep.npz', allow_pickle=True)
+    dat = np.load('rec_mnn_delay_para_sweep.npz', allow_pickle=True)
     uext = dat['uext']
     ie_ratio = dat['ie_ratio']
     mnn_mean = dat['mnn_mean']
@@ -194,10 +228,12 @@ def plot_results():
 
 if __name__=='__main__':
     
-    u, s = single_run(pop_size=10000, T_mnn = 10, record_ts = True)
+    #u, s = single_run(pop_size=12500, T_mnn = 10, record_ts = True)
 
-#    uext, ie_ratio, U, S, R = para_sweep(pop_size=1000, T_mnn=10, save_results=True)
-
+    #uext, ie_ratio, U, S = para_sweep(pop_size=12500, T_mnn=10, save_results=True)
+    uext, ie_ratio, U, S = para_sweep(pop_size=1250, T_mnn=10, save_results=True)
+    
+    print('\007')
 #    plot_results()
 #from matplotlib import pyplot as plt
 
