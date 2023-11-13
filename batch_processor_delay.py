@@ -71,10 +71,14 @@ if __name__ == "__main__":
     i,j = np.unravel_index(indx, [len(uext_array), len(ie_ratio_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
     
-    config = gen_config(N=12500, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
+    config = gen_config(N=1250, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
     
     u,s = run(config)
     
+    #!!! down sample temporal data to limit storage
+    down_sample_ratio = int(u.shape[-1]/100)
+    u = u[:,::down_sample_ratio]
+    s = s[:,::down_sample_ratio]
     
     path =  './runs/{}/'.format( exp_id )
     if not os.path.exists(path):
