@@ -157,7 +157,7 @@ class RecurrentMNN():
     
     def run_no_corr(self, T=10, record_ts = True):
         self.nsteps = int(T/self.dt)
-        self.delay_steps = int(self.delay/self.dt)             
+        self.delay_steps = int(self.delay/self.dt) # works when delay is zero
         # initial condition
         u = np.zeros(self.N) #just 1D array, no column/row 
         s = np.zeros(self.N)

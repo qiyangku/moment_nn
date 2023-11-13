@@ -228,10 +228,10 @@ def plot_results():
 
 if __name__=='__main__':
     
-    #u, s = single_run(pop_size=12500, T_mnn = 10, record_ts = True)
+    u, s = single_run(pop_size=1250, T_mnn = 10, record_ts = True)
 
     #uext, ie_ratio, U, S = para_sweep(pop_size=12500, T_mnn=10, save_results=True)
-    uext, ie_ratio, U, S = para_sweep(pop_size=1250, T_mnn=10, save_results=True)
+    #uext, ie_ratio, U, S = para_sweep(pop_size=1250, T_mnn=10, save_results=True)
     
     print('\007')
 #    plot_results()
