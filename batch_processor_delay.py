@@ -71,7 +71,7 @@ if __name__ == "__main__":
     i,j = np.unravel_index(indx, [len(uext_array), len(ie_ratio_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
     
-    config = gen_config(N=1250, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
+    config = gen_config(N=12500, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
     
     u,s = run(config)
     
