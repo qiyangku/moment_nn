@@ -17,14 +17,14 @@ def load_data(path, indx=None):
         return meta_dat        
     for f in data_files:
         if fnmatch.fnmatch( f, str(indx).zfill(3) + '*.npz'):
-            dat = np.load(path+f)
+            dat = np.load(path+f, allow_pickle=True)
             return dat
 
 #path = './runs/pre2023_brunel_delay_2023_oct_13/'    # has oscillation
 #path = './runs/pre2023_brunel_delay_zero_2023_oct_14/'    # no oscillation
-#path = './runs/pre2023_brunel_delay_longer_2023_oct_14/' #delay = 0.5*tau, has oscillation
+path = './runs/pre2023_brunel_delay_longer_2023_oct_14/' #delay = 0.5*tau, has oscillation
 #path = './runs/pre2023_brunel_delay_03_2023_oct_14/'  #no oscillation
-path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'  #no oscillation
+#path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'  #no oscillation
 
 meta_dat = load_data(path) #load meta data
 
@@ -49,6 +49,7 @@ for i in range(size[0]):
         u = dat['mnn_mean']
         s = dat['mnn_std']
         ff = s**2/u
+        config = dat['config'].item()
         
         # average over second half of simulation, to deal with oscillating solutions
         cut_off = int(u.shape[1]/2)
@@ -71,7 +72,7 @@ for i in range(size[0]):
             psd = np.abs(np.fft.fft(tmp))
             psd[0]=0
             psd = psd[:int(len(psd)/2)] #discard mirrored result
-            osc_freq[i,j] = np.argmax(psd)/(dat['config']['T_mnn']*0.02)  # psd peak index * df, which is 1/simulation time (ms)
+            osc_freq[i,j] = np.argmax(psd)/(config['T_mnn']*0.02)  # psd peak index * df, which is 1/simulation time (ms)
             
 
 dat = {'ie_ratio':ie_ratio,
