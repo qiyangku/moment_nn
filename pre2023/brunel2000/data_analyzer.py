@@ -71,7 +71,7 @@ for i in range(size[0]):
             psd = np.abs(np.fft.fft(tmp))
             psd[0]=0
             psd = psd[:int(len(psd)/2)] #discard mirrored result
-            osc_freq[i,j] = np.argmax(psd)/(config['T_mnn']*0.02)  # psd peak index * df, which is 1/simulation time (ms)
+            osc_freq[i,j] = np.argmax(psd)/(dat['config']['T_mnn']*0.02)  # psd peak index * df, which is 1/simulation time (ms)
             
 
 dat = {'ie_ratio':ie_ratio,
