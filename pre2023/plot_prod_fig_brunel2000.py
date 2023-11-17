@@ -161,6 +161,7 @@ plt.ylabel('Pop. std. FF')
 
 
 #%% Load post-analysis data and plot it
+import matplotlib.pyplot as plt
 
 def plot_post_analysis(dat):
     
@@ -239,6 +240,67 @@ path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'
 dat = np.load(path+'post_analysis.npz')   
 plot_post_analysis(dat)    
 
+#%% Plot slice
+path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'
+dat = np.load(path+'post_analysis.npz')
+
+ie_ratio = dat['ie_ratio']
+uext = dat['uext']
+mean_pop_avg = dat['mean_pop_avg']
+mean_pop_avg = dat['mean_pop_avg']
+ff_pop_avg = dat['ff_pop_avg']
+mean_pop_std = dat['mean_pop_std']
+ff_pop_std = dat['ff_pop_std']
+osc_amp = dat['osc_amp']
+osc_freq = dat['osc_freq']
+
+crit_pts = [3.4, 6.4]
+
+plt.close('all')
+plt.figure() #plot a slice
+plt.subplot(2,2,1)
+#plt.errorbar(ie_ratio, mean_pop_avg[0,:], mean_pop_std[0,:])   
+plt.fill_between(ie_ratio, mean_pop_avg[0,:]-mean_pop_std[0,:]/2, mean_pop_avg[0,:]+mean_pop_std[0,:]/2, alpha=0.3)
+plt.plot(ie_ratio, mean_pop_avg[0,:])
+
+plt.ylabel('Pop. avg. firing rate (sp/ms)')
+
+for p in crit_pts:
+    plt.plot([p,p],[-0.1,0.5],'--', color='gray')
+plt.ylim([-0.05,0.5])
+
+plt.subplot(2,2,2)
+#plt.errorbar(ie_ratio, ff_pop_avg[0,:], ff_pop_std[0,:])   
+plt.fill_between(ie_ratio, ff_pop_avg[0,:]-ff_pop_std[0,:]/2, ff_pop_avg[0,:]+ff_pop_std[0,:]/2, alpha=0.3) 
+plt.plot(ie_ratio, ff_pop_avg[0,:])   
+plt.ylabel('Pop. avg. FF')
+
+for p in crit_pts:
+    plt.plot([p,p],[-0.2,0.8],'--', color='gray')
+plt.ylim([-0.2,0.8])
+
+
+
+plt.subplot(2,2,3)    
+plt.plot(ie_ratio, osc_amp[0,:])
+plt.ylabel('Oscillation amplitude (sp/ms)')
+plt.xlabel('Inh-to-ext ratio')
+
+for p in crit_pts:
+    plt.plot([p,p],[-0.001,0.008],'--', color='gray')
+plt.ylim([-0.001,0.008])
+
+plt.subplot(2,2,4)    
+plt.plot(ie_ratio, osc_freq[0,:])
+plt.ylabel('Oscillation frequency (Hz)')
+plt.xlabel('Inh-to-ext ratio')
+
+for p in crit_pts:
+    plt.plot([p,p],[-1,15],'--', color='gray')
+plt.ylim([-1,15])
+
+
+plt.tight_layout()
 
 
 #%% plot typical examples
@@ -306,17 +368,24 @@ def plot_example(path, indx):
 
 
 
-path = './runs/pre2023_brunel_delay_05_examples_2023_oct_16/'
+#path = './runs/pre2023_brunel_delay_05_examples_2023_oct_16/'
+path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'
 meta_dat = np.load(path+'meta_data.npz', allow_pickle=True)
 uext_array = meta_dat['uext_array']
 ie_ratio_array = meta_dat['ie_ratio_array']
 
-i = np.where(uext_array==20)[0][0]
 plt.close('all')
-for j in range(8):
-    #j = np.where(ie_ratio_array==jj)[0][0]
-    indx = np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])       
-    plot_example(path, indx)
+plot_example(path, 15)
+plot_example(path, 17) #crit point 1
+plot_example(path, 25)
+plot_example(path, 32) #crit point 2
+plot_example(path, 35)
+# i = np.where(uext_array==20)[0][0]
+# plt.close('all')
+# for j in range(8):
+#     #j = np.where(ie_ratio_array==jj)[0][0]
+#     indx = np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])       
+#     plot_example(path, indx)
     
 #%% manually look into the dynamics
 
