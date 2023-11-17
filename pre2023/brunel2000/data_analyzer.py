@@ -22,9 +22,9 @@ def load_data(path, indx=None):
 
 #path = './runs/pre2023_brunel_delay_2023_oct_13/'    # has oscillation
 #path = './runs/pre2023_brunel_delay_zero_2023_oct_14/'    # no oscillation
-path = './runs/pre2023_brunel_delay_longer_2023_oct_14/' #delay = 0.5*tau, has oscillation
+#path = './runs/pre2023_brunel_delay_longer_2023_oct_14/' #delay = 0.5*tau, has oscillation
 #path = './runs/pre2023_brunel_delay_03_2023_oct_14/'  #no oscillation
-#path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'  #no oscillation
+path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'  #no oscillation
 
 meta_dat = load_data(path) #load meta data
 
