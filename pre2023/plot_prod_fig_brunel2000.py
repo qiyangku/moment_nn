@@ -376,9 +376,9 @@ ie_ratio_array = meta_dat['ie_ratio_array']
 
 plt.close('all')
 plot_example(path, 15)
-plot_example(path, 17) #crit point 1
+#plot_example(path, 17) #crit point 1; very slow convergence as expected
 plot_example(path, 25)
-plot_example(path, 32) #crit point 2
+#plot_example(path, 32) #crit point 2; oscillation slowly decay away
 plot_example(path, 35)
 # i = np.where(uext_array==20)[0][0]
 # plt.close('all')
