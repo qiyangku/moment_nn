@@ -37,9 +37,9 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
     'sparse_weight': False, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed':None,
     'dT': 200, #ms spike count time window
-    'delay': 0.1, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
+    'delay': 0.5, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
     'dt':0.02, # integration time step for mnn
-    'T_mnn':20,
+    'T_mnn':100,
     }
 
     return config
@@ -65,8 +65,10 @@ if __name__ == "__main__":
     indx = int(sys.argv[1]) #use this to pick a particular config
     exp_id = sys.argv[2] # id for the set of experiment
     
-    uext_array = np.linspace(0.0, 40.0 ,11)[1:]
-    ie_ratio_array = np.linspace(0.0, 8.0 ,9)
+    #30*33 ~ est. < 22 hrs to finish
+    uext_array = np.array([20])
+    ie_ratio_array = np.linspace(0.0, 8.0 ,41) # increment = 0.25
+
     
     i,j = np.unravel_index(indx, [len(uext_array), len(ie_ratio_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
@@ -76,9 +78,9 @@ if __name__ == "__main__":
     u,s = run(config)
     
     #!!! down sample temporal data to limit storage
-    down_sample_ratio = int(u.shape[-1]/100)
-    u = u[:,::down_sample_ratio]
-    s = s[:,::down_sample_ratio]
+    #down_sample_ratio = int(u.shape[-1]/100)
+    #u = u[:,::down_sample_ratio]
+    #s = s[:,::down_sample_ratio]
     
     path =  './runs/{}/'.format( exp_id )
     if not os.path.exists(path):
