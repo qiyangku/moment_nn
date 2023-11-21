@@ -207,7 +207,7 @@ class RecurrentMNN():
         if record_ts: # record time series data; turn off if out of memory
             U = np.zeros((self.N, self.nsteps))
             S = np.zeros((self.N, self.nsteps))
-            R = np.zeros((self.N, self.N, self.nsteps))
+            #R = np.zeros((self.N, self.N, self.nsteps)) # don't save this - consumes too much memory
             
         a = self.dt/self.tau        
         
@@ -218,7 +218,7 @@ class RecurrentMNN():
             if record_ts:
                 U[:,i] = u.ravel()
                 S[:,i] = s.ravel()
-                R[:,:,i] = rho
+                #R[:,:,i] = rho
             
             maf_u, maf_s, maf_rho = self.forward(u, s, rho)                      
             
@@ -232,7 +232,7 @@ class RecurrentMNN():
             rho = C/s.reshape(1,self.N)/s.reshape(self.N,1)
             
         if record_ts:
-            return U, S, R
+            return U, S, rho
         else:
             return u, s, rho
     

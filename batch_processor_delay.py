@@ -16,7 +16,7 @@ import os, sys, time
 #Wrapper: nested loop over the search_space
 #Output the config dictionary
 
-def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
+def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
     w = 0.1    
 
     config = {
@@ -33,13 +33,14 @@ def gen_config(N=100, ie_ratio=4.0, uext=10.0): #generate config file
     'uext': uext, # external firing rate kHz; rate*in-degree*weight = 0.01*1000*0.1 = 1 kHz
     #'wie':{'mean': 5.9, 'std': 0.0},    
     #'wii':{'mean': -9.4, 'std': 0.0},        
-    'conn_prob': 0.1, #connection probability; N.B. high prob leads to poor match between mnn and snn
+    'conn_prob': 0.5, #connection probability; N.B. high prob leads to poor match between mnn and snn
     'sparse_weight': False, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed':None,
     'dT': 200, #ms spike count time window
     'delay': 0.5, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
-    'dt':0.02, # integration time step for mnn
-    'T_mnn':100,
+    'dt':0.1, # integration time step for mnn
+    'T_mnn':20,
+    'corr': True,
     }
 
     return config
@@ -54,10 +55,15 @@ def run(config, record_ts = True ):
     
     # simulate mnn
     t0 = time.perf_counter()
-    u,s = mnn_model.run_no_corr(config['T_mnn'], record_ts = record_ts)
-    print('Time elapsed (min): ', int(time.perf_counter()-t0)/60)
     
-    return u,s
+    if config['corr']:
+        u,s,rho = mnn_model.run(config['T_mnn'], record_ts = record_ts)
+        print('Time elapsed (min): ', int(time.perf_counter()-t0)/60)        
+        return u,s,rho
+    else:
+        u,s = mnn_model.run_no_corr(config['T_mnn'], record_ts = record_ts)
+        print('Time elapsed (min): ', int(time.perf_counter()-t0)/60)        
+        return u,s
     
     
 if __name__ == "__main__":    
@@ -73,14 +79,17 @@ if __name__ == "__main__":
     i,j = np.unravel_index(indx, [len(uext_array), len(ie_ratio_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
     
-    config = gen_config(N=12500, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
+    config = gen_config(N=2500, ie_ratio=ie_ratio_array[j], uext=uext_array[i])
     
-    u,s = run(config)
+    u,s,rho = run(config)
     
     #!!! down sample temporal data to limit storage
-    #down_sample_ratio = int(u.shape[-1]/100)
+    #num_pts = 10 #number of time points to keep
+    #down_sample_ratio = int(u.shape[-1]/num_pts)
     #u = u[:,::down_sample_ratio]
     #s = s[:,::down_sample_ratio]
+    #rho = rho[:,:,::down_sample_ratio]
+    
     
     path =  './runs/{}/'.format( exp_id )
     if not os.path.exists(path):
@@ -89,7 +98,7 @@ if __name__ == "__main__":
     
     file_name = str(indx).zfill(3) +'_'+str(int(time.time()))
     
-    np.savez(path +'{}.npz'.format(file_name), config=config, mnn_mean=u,mnn_std=s)
+    np.savez(path +'{}.npz'.format(file_name), config=config, mnn_mean=u, mnn_std=s, mnn_corr=rho)
 
 
     #with open(path +'{}_config.json'.format(file_name),'w') as f:

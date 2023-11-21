@@ -253,6 +253,9 @@ mean_pop_std = dat['mean_pop_std']
 ff_pop_std = dat['ff_pop_std']
 osc_amp = dat['osc_amp']
 osc_freq = dat['osc_freq']
+osc_amp_ff = dat['osc_amp_ff']
+mean_quartiles = dat['mean_quartiles']
+ff_quartiles = dat['ff_quartiles']
 
 crit_pts = [3.4, 6.4]
 
@@ -261,6 +264,7 @@ plt.figure() #plot a slice
 plt.subplot(2,2,1)
 #plt.errorbar(ie_ratio, mean_pop_avg[0,:], mean_pop_std[0,:])   
 plt.fill_between(ie_ratio, mean_pop_avg[0,:]-mean_pop_std[0,:]/2, mean_pop_avg[0,:]+mean_pop_std[0,:]/2, alpha=0.3)
+#plt.fill_between(ie_ratio, mean_quartiles[0,:,0], mean_quartiles[0,:,1], alpha=0.3)
 plt.plot(ie_ratio, mean_pop_avg[0,:])
 
 plt.ylabel('Pop. avg. firing rate (sp/ms)')
@@ -272,8 +276,9 @@ plt.ylim([-0.05,0.5])
 plt.subplot(2,2,2)
 #plt.errorbar(ie_ratio, ff_pop_avg[0,:], ff_pop_std[0,:])   
 plt.fill_between(ie_ratio, ff_pop_avg[0,:]-ff_pop_std[0,:]/2, ff_pop_avg[0,:]+ff_pop_std[0,:]/2, alpha=0.3) 
+#plt.fill_between(ie_ratio, ff_quartiles[0,:,0], ff_quartiles[0,:,1], alpha=0.3) 
 plt.plot(ie_ratio, ff_pop_avg[0,:])   
-plt.ylabel('Pop. avg. FF')
+plt.ylabel('Pop. avg. Fano factor')
 
 for p in crit_pts:
     plt.plot([p,p],[-0.2,0.8],'--', color='gray')
@@ -296,8 +301,8 @@ plt.ylabel('Oscillation frequency (Hz)')
 plt.xlabel('Inh-to-ext ratio')
 
 for p in crit_pts:
-    plt.plot([p,p],[-1,15],'--', color='gray')
-plt.ylim([-1,15])
+    plt.plot([p,p],[-1,30],'--', color='gray')
+plt.ylim([-1,30])
 
 
 plt.tight_layout()
@@ -311,59 +316,116 @@ import matplotlib.cm as cm
 
 def plot_example(path, indx):
     dat = load_data(path, indx)
+    config = dat['config'].item()
     
     uu = dat['mnn_mean']
     ff = dat['mnn_std']**2/dat['mnn_mean']
-    config = dat['config'].item()
+    
+    #consider only excitatory neurons
+    uu = uu[:config['NE'],:]
+    ff = ff[:config['NE'],:]
     
     #plt.close('all')
-    plt.figure(figsize=(8.5,4))
+    plt.figure(figsize=(8.5,3.5))
     plt.subplot(2,3,1)
-    t = np.linspace(0, config['T_mnn'] , uu.shape[1])*20
-    plt.plot(t, np.mean(uu[:config['NE'],:],axis=0) )  #population avg (ext neuron, then inh)
-    plt.plot(t, np.mean(uu[config['NE']:,:],axis=0) , '--')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Pop avg firing rate (sp/ms)')
+    t = np.linspace(0, config['T_mnn'] , uu.shape[1])*0.02
     
-    plt.subplot(2,3,2)    
+    t_len = int(uu.shape[1]/5)
+    t_downsample_ratio = int(t_len/500)
+    t = t[:t_len:t_downsample_ratio]
+    
+    plt.plot(t, np.mean(uu[:config['NE'],:t_len:t_downsample_ratio],axis=0) )  #population avg (ext neuron, then inh)
+    #plt.plot(t, np.mean(uu[config['NE']:,:],axis=0) , '--')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Pop avg firing rate\n(sp/ms)')
+    
+    # rank neurons by firing rate
     mean_u = np.mean(uu[:, int(uu.shape[1]/2):], axis = 1)
     mean_ff = np.mean(ff[:, int(uu.shape[1]/2):], axis = 1)    
     sorted_id = np.argsort(mean_u)     
-    samples = np.arange(100,len(mean_u),3500)
-    
+    #samples = np.arange(500,len(mean_u),2300)
+    #samples = np.arange(200,10000,3100)
+    samples = np.arange(200,10000,100)
     
     #copied color palette directly from https://carto.com/carto-colors/ 
-    colors = ['#fbe6c5','#f5ba98','#ee8a82','#dc7176','#c8586c','#9c3f5d','#70284a']
+    #colors = ['#fbe6c5','#f5ba98','#ee8a82','#dc7176','#c8586c','#9c3f5d','#70284a']
+    colors = ['#fbe6c5','#f5ba98','#dc7176','#9c3f5d','#70284a']*100
     colors.reverse()
-    colors=colors[::2]
+    #colors=colors[::2]
     
+    plt.subplot(2,3,2)    
     for i in range(len(samples)):    
-        plt.plot(t, uu[sorted_id[samples[i]],:], color=colors[i])  #invidual neuron
+        plt.plot(t, uu[sorted_id[samples[i]],:t_len:t_downsample_ratio], color=colors[i])  #invidual neuron
     plt.xlabel('Time (ms)')
     plt.ylabel('Firing rates (sp/ms)')
     
     plt.subplot(2,3,3)
     plt.hist(mean_u[:config['NE']],50)
-    plt.hist(mean_u[config['NE']:],50)
+    #plt.hist(mean_u[config['NE']:],50)
     plt.xlabel('Firing rate (sp/ms)')
     
     plt.subplot(2,3,4)
-    plt.plot(t, np.mean(ff[:config['NE'],:], axis=0) )  #invidual neuron
-    plt.plot(t, np.mean(ff[config['NE']:,:], axis=0) )  #invidual neuron
+    plt.plot(t, np.mean(ff[:config['NE'],:t_len:t_downsample_ratio], axis=0) )  #invidual neuron
+    #plt.plot(t, np.mean(ff[config['NE']:,:], axis=0) , '--')  #invidual neuron
     plt.xlabel('Time (ms)')
     plt.ylabel('Pop avg Fano factor')
     
     plt.subplot(2,3,5)
     for i in range(len(samples)):    
-        plt.plot(t, ff[sorted_id[samples[i]],:], color=colors[i])  #invidual neuron        
+        plt.plot(t, ff[sorted_id[samples[i]],:t_len:t_downsample_ratio], color=colors[i])  #invidual neuron        
     plt.xlabel('Time (ms)')
     plt.ylabel('Fano factor')
     
     plt.subplot(2,3,6)
-    plt.hist(mean_ff[:config['NE']],np.linspace(0,1,51))    
-    plt.hist(mean_ff[config['NE']:],np.linspace(0,1,51))    
+    plt.hist(mean_ff[:config['NE']],51)#,np.linspace(0,1,51))    
+    #plt.hist(mean_ff[config['NE']:],np.linspace(0,1,51))    
     plt.xlabel('Fano factor')
     
+    plt.tight_layout()
+    
+    # also plot spatio-temporal pattern
+    num_neurons = 500
+    spatial_dowsample_ratio = int(uu.shape[0]/num_neurons) 
+    
+    tmax = 50
+    temporal_downsample_ratio = int(tmax/config['dt']/1000)
+    
+    # PLOT 2D state space
+    plt.figure()
+    if indx == 35:  #plot the trajectory after convergence
+        # frequency ~ 20 Hz = 0.02 kHz => period = 50 ms ~ 2.5 simulation time        
+        for i in range(len(samples)):    
+            tmp_x = uu[sorted_id[samples[i]],-200:]
+            tmp_y = ff[sorted_id[samples[i]],-200:]*tmp_x
+            plt.plot(tmp_x, tmp_y, color=colors[i])  #invidual neuron
+            #plt.plot(tmp_x[-1], tmp_y[-1], '*', color='k')
+    else: #plot the transient trajectory
+        for i in range(len(samples)):    
+            tmp_x = uu[sorted_id[samples[i]],:t_len:t_downsample_ratio]
+            tmp_y = ff[sorted_id[samples[i]],:t_len:t_downsample_ratio]*tmp_x
+            plt.plot(tmp_x, tmp_y, color=colors[i])  #invidual neuron
+            plt.plot(tmp_x[-1], tmp_y[-1], '*', color='gray')
+    plt.xlabel('Mean firing rate $\mu$ (sp/ms)')
+    plt.ylabel('Firing variability $\sigma^2$ (sp^2/ms)')
+    plt.tight_layout()
+    
+    # PLOT spatio-temporal pattern
+    plt.figure()
+    extent = [ 0, tmax*0.02 , 1, num_neurons]
+    plt.subplot(2,1,1)
+    plt.imshow( uu[sorted_id[::spatial_dowsample_ratio] , :int(tmax/config['dt']):temporal_downsample_ratio], extent=extent, aspect='auto',  interpolation='none')
+    #plt.xlabel('Time (s)')
+    plt.colorbar()
+    plt.xticks([])
+    plt.ylabel('Neuron index (ranked)')
+    plt.title('Mean firing rate (sp/ms)')
+    
+    plt.subplot(2,1,2)
+    plt.imshow( ff[sorted_id[::spatial_dowsample_ratio] , :int(tmax/config['dt']):temporal_downsample_ratio], extent=extent, aspect='auto',cmap='plasma', interpolation='none')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Neuron index (ranked)')
+    plt.title('Fano factor')
+    plt.colorbar()
     plt.tight_layout()
 
 
