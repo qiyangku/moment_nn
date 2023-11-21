@@ -35,8 +35,11 @@ ie_ratio = meta_dat['ie_ratio_array']
 size = (len(uext), len(ie_ratio))
 mean_pop_avg = np.zeros(size)
 ff_pop_avg = np.zeros(size)
+corr_pop_avg = np.zeros(size)
 mean_pop_std = np.zeros(size)
 ff_pop_std = np.zeros(size)
+corr_pop_std = np.zeros(size)
+
 mean_quartiles = np.zeros(size+(2,))
 ff_quartiles = np.zeros(size+(2,))
 
@@ -52,6 +55,16 @@ for i in range(size[0]):
         dat = load_data(path, indx)
         u = dat['mnn_mean']
         s = dat['mnn_std']
+        
+        try:
+            rho = dat['mnn_corr']
+            rho = rho[np.triu_indices(3,k=1)] #upper triangle entries
+            corr_pop_avg[i,j] = np.mean(rho)
+            corr_pop_std[i,j] = np.std(rho)
+        except:
+            corr_pop_avg[i,j] = None
+            corr_pop_std[i,j] = None
+        
         ff = s**2/u
         config = dat['config'].item()
         
@@ -95,6 +108,8 @@ dat = {'ie_ratio':ie_ratio,
 'osc_amp_ff':osc_amp_ff,
 'mean_quartiles':mean_quartiles,
 'ff_quartiles':ff_quartiles,
+'corr_pop_avg':corr_pop_avg,
+'corr_pop_std':corr_pop_avg,
 }
 
 np.savez(path+'post_analysis.npz', **dat)
