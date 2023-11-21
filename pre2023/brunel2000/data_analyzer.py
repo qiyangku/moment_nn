@@ -110,7 +110,7 @@ dat = {'ie_ratio':ie_ratio,
 'mean_quartiles':mean_quartiles,
 'ff_quartiles':ff_quartiles,
 'corr_pop_avg':corr_pop_avg,
-'corr_pop_std':corr_pop_avg,
+'corr_pop_std':corr_pop_std,
 }
 
 np.savez(path+'post_analysis.npz', **dat)
