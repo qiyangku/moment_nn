@@ -83,6 +83,8 @@ if __name__ == "__main__":
     
     u,s,rho = run(config)
     
+    #!!! record the final few steps, no down-sampling ?
+        
     #!!! down sample temporal data to limit storage
     #num_pts = 10 #number of time points to keep
     #down_sample_ratio = int(u.shape[-1]/num_pts)

@@ -44,6 +44,7 @@ for i in range(size[0]):
     for j in range(size[1]):
         indx = np.ravel_multi_index((i,j), size )
         dat = load_data(path, indx)
+        config = dat['config'].item()
         u = dat['mnn_mean']
         s = dat['mnn_std']
         ff = s**2/u
@@ -234,19 +235,32 @@ def plot_post_analysis(dat):
     plt.plot(ie_ratio, osc_amp[i,:])
     plt.ylabel('Oscillation amplitude (sp/ms)')
     
+    try:
+        corr_pop_avg = dat['corr_pop_avg']
+        plt.figure()
+        plt.imshow(corr_pop_avg, origin = 'lower', extent=extent, aspect='auto', cmap = 'coolwarm', vmin=-1,vmax=1)
+        plt.xlabel('Inh-to-ext ratio')
+        plt.ylabel('External input rate (sp/ms)')
+        plt.title('Correlation coef.')
+        plt.colorbar()
+        
+    except:
+        pass
     
 
-path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'
+#path = './runs/pre2023_brunel_delay_05_fine_2023_oct_14/'
+path = './runs/pre2023_small_network_with_corr_fine_2023_nov_21/'
+
 dat = np.load(path+'post_analysis.npz')   
 plot_post_analysis(dat)    
 
-#%% Plot slice
+#%% Plot slice (large network, no correlation)
 path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'
+
 dat = np.load(path+'post_analysis.npz')
 
 ie_ratio = dat['ie_ratio']
 uext = dat['uext']
-mean_pop_avg = dat['mean_pop_avg']
 mean_pop_avg = dat['mean_pop_avg']
 ff_pop_avg = dat['ff_pop_avg']
 mean_pop_std = dat['mean_pop_std']
@@ -451,25 +465,95 @@ plot_example(path, 35)
     
 #%% manually look into the dynamics
 
-path = './runs/pre2023_brunel_delay_05_examples_2023_oct_16/'
-dat = load_data(path, 7)
+path = './runs/pre2023_small_network_with_corr_slice_fine_2023_nov_21/'
+dat = load_data(path, 30)
+plt.imshow(dat['mnn_mean'], aspect='auto')
 
-cut_off = 800
-u = dat['mnn_mean'][:,cut_off:]
-s = dat['mnn_std'][:,cut_off:]
+
+
+
+
+#cut_off = 800
+#u = dat['mnn_mean'][:,cut_off:]
+#s = dat['mnn_std'][:,cut_off:]
+
+
+############################################################
+#%% Plot slice (small network, with correlation)
+
+path = './runs/pre2023_small_network_with_corr_slice_fine_2023_nov_21/' #warning: T_mnn=20 not be long enough for convergence; need 100
+
+dat = np.load(path+'post_analysis.npz')
+
+ie_ratio = dat['ie_ratio']
+uext = dat['uext']
+mean_pop_avg = dat['mean_pop_avg']
+ff_pop_avg = dat['ff_pop_avg']
+corr_pop_avg = dat['corr_pop_avg']
+mean_pop_std = dat['mean_pop_std']
+ff_pop_std = dat['ff_pop_std']
+corr_pop_std = dat['corr_pop_std']
+
+osc_amp = dat['osc_amp']
+osc_freq = dat['osc_freq']
+osc_amp_ff = dat['osc_amp_ff']
+mean_quartiles = dat['mean_quartiles']
+ff_quartiles = dat['ff_quartiles']
+
+crit_pts = [3.4, 6.4]
 
 plt.close('all')
+plt.figure() #plot a slice
+plt.subplot(2,2,1)
+#plt.errorbar(ie_ratio, mean_pop_avg[0,:], mean_pop_std[0,:])   
+plt.fill_between(ie_ratio, mean_pop_avg[0,:]-mean_pop_std[0,:], mean_pop_avg[0,:]+mean_pop_std[0,:], alpha=0.3)
+#plt.fill_between(ie_ratio, mean_quartiles[0,:,0], mean_quartiles[0,:,1], alpha=0.3)
+plt.plot(ie_ratio, mean_pop_avg[0,:])
+
+plt.ylabel('Pop. avg. firing rate (sp/ms)')
+
+#for p in crit_pts:
+#    plt.plot([p,p],[-0.1,0.5],'--', color='gray')
+#plt.ylim([-0.05,0.5])
+
+plt.subplot(2,2,2)
+#plt.errorbar(ie_ratio, ff_pop_avg[0,:], ff_pop_std[0,:])   
+plt.fill_between(ie_ratio, ff_pop_avg[0,:]-ff_pop_std[0,:], ff_pop_avg[0,:]+ff_pop_std[0,:], alpha=0.3) 
+#plt.fill_between(ie_ratio, ff_quartiles[0,:,0], ff_quartiles[0,:,1], alpha=0.3) 
+plt.plot(ie_ratio, ff_pop_avg[0,:])   
+plt.ylabel('Pop. avg. Fano factor')
+
+#for p in crit_pts:
+#    plt.plot([p,p],[-0.2,0.8],'--', color='gray')
+#plt.ylim([-0.2,0.8])
+
+
+
+plt.subplot(2,2,3)    
+plt.plot(ie_ratio, osc_amp[0,:])
+plt.ylabel('Oscillation amplitude (sp/ms)')
+plt.xlabel('Inh-to-ext ratio')
+
+# for p in crit_pts:
+#     plt.plot([p,p],[-0.001,0.008],'--', color='gray')
+# plt.ylim([-0.001,0.008])
+
+plt.subplot(2,2,4)    
+plt.plot(ie_ratio, osc_freq[0,:])
+plt.ylabel('Oscillation frequency (Hz)')
+plt.xlabel('Inh-to-ext ratio')
+
+plt.tight_layout()    
+
+# for p in crit_pts:
+#     plt.plot([p,p],[-1,30],'--', color='gray')
+# plt.ylim([-1,30])
+
 plt.figure()
 plt.subplot(2,2,1)
-for k in [0,99,199]:
-    plt.plot( u[k,:], s[k,:]**2)
-    
-plt.subplot(2,2,2)  
-for k in [1, -1]:
-    plt.plot( u[0,:], u[k,:])
+plt.fill_between(ie_ratio, corr_pop_avg[0,:]-corr_pop_std[0,:], corr_pop_avg[0,:]+corr_pop_std[0,:], alpha=0.3) 
+plt.plot(ie_ratio,corr_pop_avg[0,:])
+plt.ylabel('Avg. correlation')
+plt.xlabel('Inh-to-ext ratio')
 
-plt.subplot(2,2,3)  
-for k in range(1,7):
-    plt.plot( s[0,:]**2, s[k,:]**2)
-    
     
