@@ -39,7 +39,7 @@ def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
     'dT': 200, #ms spike count time window
     'delay': 0.5, # synaptic delay (uniform) in Brunel it's around 2 ms (relative to 20 ms mem time scale)
     'dt':0.1, # integration time step for mnn
-    'T_mnn':20,
+    'T_mnn':100,
     'corr': True,
     }
 
@@ -72,9 +72,11 @@ if __name__ == "__main__":
     exp_id = sys.argv[2] # id for the set of experiment
     
     #30*33 ~ est. < 22 hrs to finish
-    uext_array = np.array([20])
-    ie_ratio_array = np.linspace(0.0, 8.0 ,41) # increment = 0.25
-
+    #uext_array = np.array([20])
+    #ie_ratio_array = np.linspace(0.0, 8.0 ,41) # increment = 0.25
+    
+    uext_array = np.linspace(10.0, 40.0 ,31)[1:] #no activity for uext=<10
+    ie_ratio_array = np.linspace(0.0, 8.0 ,33) # increment = 0.25
     
     i,j = np.unravel_index(indx, [len(uext_array), len(ie_ratio_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
@@ -83,8 +85,6 @@ if __name__ == "__main__":
     
     u,s,rho = run(config)
     
-    #!!! record the final few steps, no down-sampling ?
-        
     #!!! down sample temporal data to limit storage
     #num_pts = 10 #number of time points to keep
     #down_sample_ratio = int(u.shape[-1]/num_pts)

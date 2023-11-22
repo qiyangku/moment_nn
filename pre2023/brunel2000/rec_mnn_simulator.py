@@ -198,7 +198,7 @@ class RecurrentMNN():
     
     def run(self, T = 10, record_ts = True):
         self.nsteps = int(T/self.dt)
-        
+        self.delay_steps = int(self.delay/self.dt) # works when delay is zero
         # initial condition
         u = np.zeros((self.N,1))
         s = np.zeros((self.N,1))
@@ -209,6 +209,11 @@ class RecurrentMNN():
             S = np.zeros((self.N, self.nsteps))
             #R = np.zeros((self.N, self.N, self.nsteps)) # don't save this - consumes too much memory
             
+        cache_U = np.zeros((self.N, self.delay_steps+1 )) # NB for 1 step of delay, need to save step+1 entries
+        cache_S = np.zeros((self.N, self.delay_steps+1 ))
+        cache_rho = np.zeros((self.N,self.N, self.delay_steps+1 ))
+        
+        
         a = self.dt/self.tau        
         
         
@@ -220,7 +225,20 @@ class RecurrentMNN():
                 S[:,i] = s.ravel()
                 #R[:,:,i] = rho
             
-            maf_u, maf_s, maf_rho = self.forward(u, s, rho)                      
+            # read oldest cached data
+            u_delayed = cache_U[:,-1].reshape(-1,1)
+            s_delayed = cache_S[:,-1].reshape(-1,1)
+            rho_delayed = cache_rho[:,:,-1]
+            
+            # update cache
+            cache_U = np.roll(cache_U,1,axis = 1)
+            cache_S = np.roll(cache_S,1,axis = 1)
+            cache_rho = np.roll(cache_rho,1,axis = 2)
+            cache_U[:,0] = u.ravel() 
+            cache_S[:,0] = s.ravel()
+            cache_rho[:,:,0] = rho
+            
+            maf_u, maf_s, maf_rho = self.forward(u_delayed, s_delayed, rho_delayed)                      
             
             C = rho*np.reshape(s,(1,self.N))*np.reshape(s,(self.N,1))
             maf_C = maf_rho*np.reshape(maf_s,(1,self.N))*np.reshape(maf_s,(self.N,1))

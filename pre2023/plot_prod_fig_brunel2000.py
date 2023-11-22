@@ -271,7 +271,7 @@ def plot_post_analysis(dat):
         plt.title('I-I pops. correlation')
         plt.colorbar()
         
-        
+        plt.tight_layout()
         
     except:
         pass
