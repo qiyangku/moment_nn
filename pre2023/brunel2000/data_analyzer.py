@@ -48,9 +48,9 @@ corr_pop_std = np.zeros(size+(3,))
 mean_quartiles = np.zeros(size+(2,))
 ff_quartiles = np.zeros(size+(2,))
 
-osc_amp = np.zeros(size+(2,))
-osc_amp_ff = np.zeros(size+(2,))
-osc_freq = np.zeros(size+(2,))
+osc_amp = np.zeros(size)
+osc_amp_ff = np.zeros(size)
+osc_freq = np.zeros(size)
 
 for i in range(size[0]):
     print('Processing... {}/{}'.format(i, size[0]))

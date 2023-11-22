@@ -168,13 +168,24 @@ def plot_post_analysis(dat):
     
     ie_ratio = dat['ie_ratio']
     uext = dat['uext']
-    mean_pop_avg = dat['mean_pop_avg']
-    mean_pop_avg = dat['mean_pop_avg']
-    ff_pop_avg = dat['ff_pop_avg']
-    mean_pop_std = dat['mean_pop_std']
-    ff_pop_std = dat['ff_pop_std']
-    osc_amp = dat['osc_amp']
-    osc_freq = dat['osc_freq']
+    
+    try:
+        # load excitatory neuron stats
+        mean_pop_avg = dat['mean_pop_avg'][:,:,0]
+        mean_pop_avg = dat['mean_pop_avg'][:,:,0]
+        ff_pop_avg = dat['ff_pop_avg'][:,:,0]
+        mean_pop_std = dat['mean_pop_std'][:,:,0]
+        ff_pop_std = dat['ff_pop_std'][:,:,0]
+        osc_amp = dat['osc_amp']
+        osc_freq = dat['osc_freq']
+    except: # compatibility to older versions
+        mean_pop_avg = dat['mean_pop_avg']
+        mean_pop_avg = dat['mean_pop_avg']
+        ff_pop_avg = dat['ff_pop_avg']
+        mean_pop_std = dat['mean_pop_std']
+        ff_pop_std = dat['ff_pop_std']
+        osc_amp = dat['osc_amp']
+        osc_freq = dat['osc_freq']
     
     plt.close('all')
 
@@ -238,11 +249,29 @@ def plot_post_analysis(dat):
     try:
         corr_pop_avg = dat['corr_pop_avg']
         plt.figure()
-        plt.imshow(corr_pop_avg, origin = 'lower', extent=extent, aspect='auto', cmap = 'coolwarm', vmin=-1,vmax=1)
+        
+        plt.subplot(2,2,1)
+        plt.imshow(corr_pop_avg[:,:,0], origin = 'lower', extent=extent, aspect='auto', cmap = 'coolwarm', vmin=-1,vmax=1)
         plt.xlabel('Inh-to-ext ratio')
         plt.ylabel('External input rate (sp/ms)')
-        plt.title('Correlation coef.')
+        plt.title('E-E pops. correlation')
         plt.colorbar()
+        
+        plt.subplot(2,2,2)
+        plt.imshow(corr_pop_avg[:,:,2], origin = 'lower', extent=extent, aspect='auto', cmap = 'coolwarm', vmin=-1,vmax=1)
+        plt.xlabel('Inh-to-ext ratio')
+        plt.ylabel('External input rate (sp/ms)')
+        plt.title('E-I pops. correlation')
+        plt.colorbar()
+        
+        plt.subplot(2,2,3)
+        plt.imshow(corr_pop_avg[:,:,1], origin = 'lower', extent=extent, aspect='auto', cmap = 'coolwarm', vmin=-1,vmax=1)
+        plt.xlabel('Inh-to-ext ratio')
+        plt.ylabel('External input rate (sp/ms)')
+        plt.title('I-I pops. correlation')
+        plt.colorbar()
+        
+        
         
     except:
         pass
