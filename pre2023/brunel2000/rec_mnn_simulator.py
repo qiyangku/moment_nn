@@ -72,6 +72,42 @@ def gen_synaptic_weight(config):
         W = sp.sparse.csr_matrix(W) # W.dot() is efficient but not ().dot(W)        
     return W
 
+def gen_synaptic_weight_constant_degree(config):
+    '''
+    Generate synaptic weight matrix with fixed degree
+    The point is to remove all sources of quenched noise
+    
+    '''
+    Ne = config['NE']
+    Ni = config['NI']
+    N = Ne+Ni
+
+    # constant degree for E/I inputs; NB this only depends on pre-synaptic neurons
+    KE = int(config['conn_prob']*Ne)
+    KI = int(config['conn_prob']*Ni)
+    
+    W = np.zeros((N,N))
+    
+    for i in range(N):
+        if config['randseed'] is None:            
+            rand_indx = np.random.choice(Ne, KE, replace=False)
+            W[i,rand_indx] = config['wee']['mean']
+            rand_indx = np.random.choice(Ni, KI, replace=False) + Ne
+            W[i,rand_indx] = config['wii']['mean']
+        else:
+            rng = np.random.default_rng( config['randseed'] )            
+            rand_indx = rng.choice(Ne, KE, replace=False)
+            W[i,rand_indx] = config['wee']['mean']
+            rand_indx = rng.choice(Ni, KI, replace=False) + Ne
+            W[i,rand_indx] = config['wii']['mean']
+    
+    #remove diagonal (self-conneciton)
+    #np.fill_diagonal(W,0)
+    
+    if config['sparse_weight']:
+        W = sp.sparse.csr_matrix(W) # W.dot() is efficient but not ().dot(W)        
+    return W
+
 class RecurrentMNN():
     def __init__(self, config, W, input_gen):
         self.NE = config['NE']
