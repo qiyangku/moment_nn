@@ -119,14 +119,16 @@ for i in range(size[0]):
         # detect oscillation
         tmp = np.mean(u[:, cut_off:], axis=0) #population average, no time average
         tmp_ff = np.mean(ff[:, cut_off:], axis=0)
-        if ie_ratio[j]>4: # no oscilation found for excitation dominant regime
-            osc_amp[i,j] = 0.5*(np.max(tmp)-np.min(tmp)) #rough estimate of oscillation amplitude
-            osc_amp_ff[i,j] = 0.5*(np.max(tmp_ff)-np.min(tmp_ff))
-            #if osc_amp[i,j]>1e-5:
-            psd = np.abs(np.fft.fft(tmp))
-            psd[0]=0
-            psd = psd[:int(len(psd)/2)] #discard mirrored result
-            osc_freq[i,j] = np.argmax(psd)/(config['T_mnn']/2*0.02)  # psd peak index * df, which is 1/simulation time (0.02 s is mem constant)
+        
+        
+        #if ie_ratio[j]>4: # no oscilation found for excitation dominant regime
+        osc_amp[i,j] = 0.5*(np.max(tmp)-np.min(tmp)) #rough estimate of oscillation amplitude
+        osc_amp_ff[i,j] = 0.5*(np.max(tmp_ff)-np.min(tmp_ff))
+        #if osc_amp[i,j]>1e-5:
+        psd = np.abs(np.fft.fft(tmp))
+        psd[0]=0
+        psd = psd[:int(len(psd)/2)] #discard mirrored result
+        osc_freq[i,j] = np.argmax(psd)/(config['T_mnn']/2*0.02)  # psd peak index * df, which is 1/simulation time (0.02 s is mem constant)
             
 
 dat = {'ie_ratio':ie_ratio,
