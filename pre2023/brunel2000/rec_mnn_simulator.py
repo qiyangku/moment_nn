@@ -195,8 +195,10 @@ class RecurrentMNN():
         self.nsteps = int(T/self.dt)
         self.delay_steps = int(self.delay/self.dt) # works when delay is zero
         # initial condition
-        u = np.zeros(self.N) #just 1D array, no column/row 
-        s = np.zeros(self.N)
+        #u = np.zeros(self.N) #just 1D array, no column/row 
+        #s = np.zeros(self.N)
+        u = np.random.rand(self.N)*1e-2
+        s = np.random.rand(self.N)*1e-1
         
         if record_ts: # cached data for synaptic delay
             U = np.zeros((self.N, self.nsteps ))
@@ -214,7 +216,7 @@ class RecurrentMNN():
             
             # read oldest cached data
             u_delayed = cache_U[:,-1]
-            s_delayed = cache_S[:,-1]                
+            s_delayed = cache_S[:,-1]
             
             # update cache
             cache_U = np.roll(cache_U,1,axis = 1)
@@ -249,9 +251,7 @@ class RecurrentMNN():
         cache_S = np.zeros((self.N, self.delay_steps+1 ))
         cache_rho = np.zeros((self.N,self.N, self.delay_steps+1 ))
         
-        
         a = self.dt/self.tau        
-        
         
         for i in range(self.nsteps):
             #print('Starting iteration {}/{}'.format(i,self.nsteps))
