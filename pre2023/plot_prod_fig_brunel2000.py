@@ -306,7 +306,7 @@ plt.close('all')
 plt.figure() #plot a slice
 plt.subplot(2,2,1)
 #plt.errorbar(ie_ratio, mean_pop_avg[0,:], mean_pop_std[0,:])   
-plt.fill_between(ie_ratio, mean_pop_avg[0,:]-mean_pop_std[0,:]/2, mean_pop_avg[0,:]+mean_pop_std[0,:]/2, alpha=0.3)
+plt.fill_between(ie_ratio, mean_pop_avg[0,:]-mean_pop_std[0,:], mean_pop_avg[0,:]+mean_pop_std[0,:], alpha=0.3)
 #plt.fill_between(ie_ratio, mean_quartiles[0,:,0], mean_quartiles[0,:,1], alpha=0.3)
 plt.plot(ie_ratio, mean_pop_avg[0,:])
 
@@ -318,7 +318,7 @@ plt.ylim([-0.05,0.5])
 
 plt.subplot(2,2,2)
 #plt.errorbar(ie_ratio, ff_pop_avg[0,:], ff_pop_std[0,:])   
-plt.fill_between(ie_ratio, ff_pop_avg[0,:]-ff_pop_std[0,:]/2, ff_pop_avg[0,:]+ff_pop_std[0,:]/2, alpha=0.3) 
+plt.fill_between(ie_ratio, ff_pop_avg[0,:]-ff_pop_std[0,:], ff_pop_avg[0,:]+ff_pop_std[0,:], alpha=0.3) 
 #plt.fill_between(ie_ratio, ff_quartiles[0,:,0], ff_quartiles[0,:,1], alpha=0.3) 
 plt.plot(ie_ratio, ff_pop_avg[0,:])   
 plt.ylabel('Pop. avg. Fano factor')

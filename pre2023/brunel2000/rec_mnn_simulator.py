@@ -108,6 +108,53 @@ def gen_synaptic_weight_constant_degree(config):
         W = sp.sparse.csr_matrix(W) # W.dot() is efficient but not ().dot(W)        
     return W
 
+def draw_gamma(n, mu, v):
+    ''' draw gamma random variables given mean and variance'''
+    k = mu**2 / v
+    theta = v / mu
+    return np.random.gamma(k, theta, n)
+
+def gen_synaptic_weight_vary_heterogeneity(config):
+    '''
+    Generate synaptic weight matrix with fixed degree
+    The point is to remove all sources of quenched noise
+    
+    '''
+    Ne = config['NE']
+    Ni = config['NI']
+    N = Ne+Ni
+
+    # constant degree for E/I inputs; NB this only depends on pre-synaptic neurons
+    mean_KE = int(config['conn_prob']*Ne)
+    mean_KI = int(config['conn_prob']*Ni)
+    hetro = config['degree_hetero'] # in-degree heterogeneity: var/mean in-degree; 1 = ER network
+    
+    KE = draw_gamma(N, mean_KE, int(hetro*mean_KE) ) 
+    KI = draw_gamma(N, mean_KI, int(hetro*mean_KI) ) 
+    
+    W = np.zeros((N,N))
+    
+    for i in range(N):
+        if config['randseed'] is None:            
+            rand_indx = np.random.choice(Ne, int(KE[i]), replace=False)
+            W[i,rand_indx] = config['wee']['mean']
+            rand_indx = np.random.choice(Ni, int(KI[i]), replace=False) + Ne
+            W[i,rand_indx] = config['wii']['mean']
+        else:
+            rng = np.random.default_rng( config['randseed'] )            
+            rand_indx = rng.choice(Ne, int(KE[i]), replace=False)
+            W[i,rand_indx] = config['wee']['mean']
+            rand_indx = rng.choice(Ni, int(KI[i]), replace=False) + Ne
+            W[i,rand_indx] = config['wii']['mean']
+    
+    #remove diagonal (self-conneciton)
+    #np.fill_diagonal(W,0)
+    
+    if config['sparse_weight']:
+        W = sp.sparse.csr_matrix(W) # W.dot() is efficient but not ().dot(W)        
+    return W
+
+
 class RecurrentMNN():
     def __init__(self, config, W, input_gen):
         self.NE = config['NE']

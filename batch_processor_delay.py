@@ -16,9 +16,8 @@ import os, sys, time
 #Wrapper: nested loop over the search_space
 #Output the config dictionary
 
-def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
+def gen_config(N=2500, ie_ratio=4.0, uext=10.0, degree_hetero=None): #generate config file
     w = 0.1    
-    p = 1000/N #connection probability = avg in-degree / num neurons
     
     config = {
     'Vth': 20, #mV, firing threshold, default 20
@@ -34,7 +33,7 @@ def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
     'uext': uext, # external firing rate kHz; rate*in-degree*weight = 0.01*1000*0.1 = 1 kHz
     #'wie':{'mean': 5.9, 'std': 0.0},    
     #'wii':{'mean': -9.4, 'std': 0.0},        
-    'conn_prob': p, #connection probability; N.B. high prob leads to poor match between mnn and snn
+    'conn_prob': 0.1, #connection probability; N.B. high prob leads to poor match between mnn and snn
     'sparse_weight': False, #use sparse weight matrix; not necessarily faster but saves memory
     'randseed': None, #no point fix rand seed if network size varies
     'dT': 200, #ms spike count time window
@@ -42,6 +41,7 @@ def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
     'dt':0.1, # integration time step for mnn
     'T_mnn':100,
     'corr': False,
+    'degree_hetero': degree_hetero,
     }
 
     return config
@@ -49,8 +49,9 @@ def gen_config(N=2500, ie_ratio=4.0, uext=10.0): #generate config file
 
 def run(config, record_ts = True ):
     
-    W = gen_synaptic_weight(config) #doesn't take too much time with 1e4 neurons    
+    #W = gen_synaptic_weight(config) #doesn't take too much time with 1e4 neurons    
     #W = gen_synaptic_weight_constant_degree(config)
+    W = gen_synaptic_weight_vary_heterogeneity(config)
     
     input_gen = InputGenerator(config)
     mnn_model = RecurrentMNN(config, W, input_gen)
@@ -78,15 +79,15 @@ if __name__ == "__main__":
     uext_array = np.array([20])    
     #ie_ratio_array = linspace(0.0, 8.0 ,9) # increment = 0.25
     ie_ratio = 5.0
-    N_array = np.linspace(1,20,21)*1000 #number of neurons
+    degree_hetero_array = np.linspace(0,1.5,16) #in-degree heterogeneity
     
     #uext_array = np.linspace(10.0, 40.0 ,31)[1:] #no activity for uext=<10
     #ie_ratio_array = np.linspace(0.0, 8.0 ,33) # increment = 0.25
     
-    i,j = np.unravel_index(indx, [len(uext_array), len(N_array)] ) 
+    i,j = np.unravel_index(indx, [len(uext_array), len(degree_hetero_array)] ) 
     # to get linear index back from subscripts, use: np.ravel_multi_index((i,j),[len(uext_array), len(ie_ratio_array)])
     
-    config = gen_config(N=int(N_array[j]), ie_ratio=ie_ratio, uext=uext_array[i])
+    config = gen_config(N=12500, ie_ratio=ie_ratio, uext=uext_array[i], degree_hetero=degree_hetero_array[j])
     
     u,s = run(config)
     
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     path =  './runs/{}/'.format( exp_id )
     if not os.path.exists(path):
         os.makedirs(path)
-        np.savez(path+'meta_data.npz', exp_id=exp_id, uext_array=uext_array, N_array=N_array)
+        np.savez(path+'meta_data.npz', exp_id=exp_id, uext_array=uext_array, degree_hetero_array=degree_hetero_array)
     
     file_name = str(indx).zfill(3) +'_'+str(int(time.time()))
     
