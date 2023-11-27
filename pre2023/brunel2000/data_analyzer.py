@@ -27,7 +27,9 @@ def load_data(path, indx=None):
 #path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'  #no oscillation
 #path = './runs/pre2023_small_network_with_corr_slice_fine_2023_nov_21/'  # with corr
 #path = './runs/pre2023_small_network_with_corr_fine_2023_nov_21/'  # with corr
-path = './runs/vary_network_size_no_corr_nov_27/'  # with corr
+#path = './runs/vary_network_size_no_corr_nov_27/'  # with corr
+path = './runs/vary_degree_heterogeneity_no_corr_nov_27/'  # with corr
+
 
 meta_dat = load_data(path) #load meta data
 
@@ -35,6 +37,7 @@ try:
     uext = meta_dat['uext_array']
     ie_ratio = meta_dat['ie_ratio_array']
     N = []
+    degree_hetero = []
     size = (len(uext), len(ie_ratio))
 except:
     pass
@@ -43,7 +46,17 @@ try:
     uext = meta_dat['uext_array']
     N = meta_dat['N_array']    
     ie_ratio = []
+    degree_hetero = []
     size = (len(uext), len(N))
+except:
+    pass
+
+try:
+    uext = meta_dat['uext_array']
+    degree_hetero = meta_dat['degree_hetero_array']    
+    ie_ratio = []
+    N = []
+    size = (len(uext), len(degree_hetero))
 except:
     pass
 
@@ -133,6 +146,7 @@ for i in range(size[0]):
 
 dat = {'ie_ratio':ie_ratio,
 'uext':uext,
+'degree_hetero':degree_hetero,
 'N':N,
 'mean_pop_avg':mean_pop_avg,
 'ff_pop_avg':ff_pop_avg,
