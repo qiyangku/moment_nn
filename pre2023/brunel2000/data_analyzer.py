@@ -26,15 +26,27 @@ def load_data(path, indx=None):
 #path = './runs/pre2023_brunel_delay_03_2023_oct_14/'  #no oscillation
 #path = './runs/pre2023_brunel_delay_05_slice_fine_2023_oct_16/'  #no oscillation
 #path = './runs/pre2023_small_network_with_corr_slice_fine_2023_nov_21/'  # with corr
-path = './runs/pre2023_small_network_with_corr_fine_2023_nov_21/'  # with corr
+#path = './runs/pre2023_small_network_with_corr_fine_2023_nov_21/'  # with corr
+path = './runs/vary_network_size_no_corr_nov_27/'  # with corr
 
 meta_dat = load_data(path) #load meta data
 
-uext = meta_dat['uext_array']
-ie_ratio = meta_dat['ie_ratio_array']
+try:
+    uext = meta_dat['uext_array']
+    ie_ratio = meta_dat['ie_ratio_array']
+    N = []
+    size = (len(uext), len(ie_ratio))
+except:
+    pass
 
-# analysis 
-size = (len(uext), len(ie_ratio))
+try:
+    uext = meta_dat['uext_array']
+    N = meta_dat['N_array']    
+    ie_ratio = []
+    size = (len(uext), len(N))
+except:
+    pass
+
 
 # [:,:,0] is ext; [:,:,1] is inh
 mean_pop_avg = np.zeros(size+(2,))
@@ -119,6 +131,7 @@ for i in range(size[0]):
 
 dat = {'ie_ratio':ie_ratio,
 'uext':uext,
+'N':N,
 'mean_pop_avg':mean_pop_avg,
 'ff_pop_avg':ff_pop_avg,
 'mean_pop_std':mean_pop_std,
