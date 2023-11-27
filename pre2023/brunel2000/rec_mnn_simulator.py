@@ -110,9 +110,13 @@ def gen_synaptic_weight_constant_degree(config):
 
 def draw_gamma(n, mu, v):
     ''' draw gamma random variables given mean and variance'''
-    k = mu**2 / v
-    theta = v / mu
-    return np.random.gamma(k, theta, n)
+    if v > 0:
+        k = mu**2 / v
+        theta = v / mu
+        K = np.random.gamma(k, theta, n)
+    else:
+        K = mu*np.ones(n)        
+    return K
 
 def gen_synaptic_weight_vary_heterogeneity(config):
     '''
