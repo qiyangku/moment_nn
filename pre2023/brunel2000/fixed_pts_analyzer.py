@@ -22,6 +22,7 @@ def load_data(path, indx=None):
 
 path = './runs/vary_ie_ratio_fix_randseed__no_corr_nov_27/'  # with corr
 
+meta_dat = load_data(path) #load meta data
 
 uext = meta_dat['uext_array']
 ie_ratio = meta_dat['ie_ratio_array']
