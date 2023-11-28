@@ -20,15 +20,24 @@ class InputGenerator():
         self.N = config['NE']+config['NI']
         self.uext = config['uext']
         we = config['wee']['mean']        
+        #define external input mean        
+        self.input_mean = we*self.uext*np.ones((self.N,1)) #input current mean        
+        #calculate external input cov (assume independent Poisson spikes)
+        self.input_cov = we*we*self.uext*np.eye(self.N)                         
+        #self.L_ext = np.linalg.cholesky(self.input_cov)                
+        return
+
+class InputGenerator_constant():
+    def __init__(self, config):
+        self.NE = config['NE']
+        self.NI = config['NI']
+        self.N = config['NE']+config['NI']
+        self.uext = config['uext']        
         #define external input mean
         #
-        self.input_mean = we*self.uext*np.ones((self.N,1)) #input current mean
-        
-        #calculate external input cov (assume independent Poisson spikes)
-        self.input_cov = we*we*self.uext*np.eye(self.N) 
-                
-        
-        #self.L_ext = np.linalg.cholesky(self.input_cov)        
+        self.input_mean = self.uext*np.ones((self.N,1)) #input current mean        
+        #calculate external input cov (zero cov)
+        self.input_cov = np.zeros((self.N,self.N))
         
         return
 
