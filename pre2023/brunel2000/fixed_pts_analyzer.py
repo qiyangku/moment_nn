@@ -28,7 +28,7 @@ uext = meta_dat['uext_array']
 ie_ratio = meta_dat['ie_ratio_array']
 
 U0 = np.zeros((12500, len(ie_ratio)))
-S0 = U.copy()
+S0 = U0.copy()
 
 
 for j in range(len(ie_ratio)):
