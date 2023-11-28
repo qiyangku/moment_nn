@@ -27,10 +27,9 @@ meta_dat = load_data(path) #load meta data
 uext = meta_dat['uext_array']
 ie_ratio = meta_dat['ie_ratio_array']
 
-U0 = np.zeros(12500, len(ie_ratio))
+U0 = np.zeros((12500, len(ie_ratio)))
 S0 = U.copy()
 
-dU
 
 for j in range(len(ie_ratio)):
     dat = load_data(path, indx)        
