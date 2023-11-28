@@ -32,11 +32,8 @@ S0 = U0.copy()
 
 
 for j in range(len(ie_ratio)):
-    dat = load_data(path, indx)        
-    config = dat['config'].item()        
-    NE = config['NE']
-    NI = config['NI']        
-    
+    dat = load_data(path, j)        
+    config = dat['config'].item()
     #save fixed point
     U0[:,j] = dat['mnn_mean'][:,-1]
     S0[:,j] = dat['mnn_std'][:,-1]
