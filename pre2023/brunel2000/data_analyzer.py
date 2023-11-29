@@ -33,39 +33,37 @@ path = './runs/nn2014_constant_input_and_degree/'  # with corr
 
 meta_dat = load_data(path) #load meta data
 
+uext = []
+ie_ratio = []
+N = []
+degree_hetero = []
+w = []
+
 try:
     uext = meta_dat['uext_array']
     ie_ratio = meta_dat['ie_ratio_array']
-    N = []
-    degree_hetero = []
     size = (len(uext), len(ie_ratio))
 except:
     pass
 
 try:
     uext = meta_dat['uext_array']
-    N = meta_dat['N_array']    
-    ie_ratio = []
-    degree_hetero = []
+    N = meta_dat['N_array']        
     size = (len(uext), len(N))
 except:
     pass
 
 try:
     uext = meta_dat['uext_array']
-    degree_hetero = meta_dat['degree_hetero_array']    
-    ie_ratio = []
-    N = []
+    degree_hetero = meta_dat['degree_hetero_array']            
     size = (len(uext), len(degree_hetero))
 except:
     pass
 
 try:
     uext = meta_dat['uext_array']
-    degree_hetero = meta_dat['w_array']    
-    ie_ratio = []
-    N = []
-    size = (len(uext), len(w_array))
+    w = meta_dat['w_array']
+    size = (len(uext), len(w))
 except:
     pass
 
@@ -156,6 +154,7 @@ dat = {'ie_ratio':ie_ratio,
 'uext':uext,
 'degree_hetero':degree_hetero,
 'N':N,
+'w':w,
 'mean_pop_avg':mean_pop_avg,
 'ff_pop_avg':ff_pop_avg,
 'mean_pop_std':mean_pop_std,
